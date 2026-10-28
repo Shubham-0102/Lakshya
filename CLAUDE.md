@@ -19,7 +19,9 @@
 - The user is sending permission emails to the blocked portals (template in `docs/sources.md`).
 - Task 3 (Docker Compose) done.
 - Task 4 (schema and migrations) done: models in `backend/src/lakshya_backend/db/models.py`, migration 0001, `scraper/sources.yaml` + `sync_sources`.
-- Next: task 5 (common job format: `RawJob` and `CleanJob`). Show its detailed plan and wait for approval.
+- Task 5 (common job format) done: `RawJob` and `CleanJob` in `scraper/src/lakshya_scraper/job_format.py`.
+- Next: task 6 (cleaning). Show its detailed plan and wait for approval.
+- My shell runs on the user's machine in the same folder, so run checks directly instead of asking the user to paste output. Use `docker compose exec -T` (without `-T`, psql opens a pager and the output disappears).
 - GitHub: https://github.com/Shubham-0102/Lakshya (remote `origin`). Push only when the user asks. Push with `git -c credential.helper='!gh auth git-credential' push`; there is no global credential helper.
 - Update this section whenever a task or phase is completed.
 
