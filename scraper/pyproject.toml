@@ -6,7 +6,9 @@ requires-python = ">=3.13"
 dependencies = [
     "lakshya-backend",
     "nepali-datetime>=1.0.8.5",
+    "playwright>=1.64.1",
     "pyyaml>=6.0.3",
+    "redis>=8.1.0",
 ]
 
 [tool.uv.sources]

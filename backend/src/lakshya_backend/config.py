@@ -11,6 +11,13 @@ class Settings(BaseSettings):
 
     database_url: str
     test_database_url: str | None = None
+    redis_url: str
+
+    # Scraper: an honest user agent with a way to contact us, and a cap on requests per run
+    scraper_user_agent: str = (
+        "Lakshya/0.1 (+https://github.com/Shubham-0102/Lakshya; yadavvshubham0102@gmail.com)"
+    )
+    scraper_max_requests: int = 300
 
 
 @lru_cache

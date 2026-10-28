@@ -10,6 +10,8 @@ from pathlib import Path
 import pytest
 from alembic import command
 from alembic.config import Config
+from redis import Redis
+from redis.exceptions import ConnectionError as RedisConnectionError
 from sqlalchemy import Engine, create_engine, make_url, text
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session
@@ -55,6 +57,18 @@ def migrated_engine(test_database_url: str, alembic_cfg: Config) -> Engine:
     command.upgrade(alembic_cfg, "head")
     yield engine
     engine.dispose()
+
+
+@pytest.fixture(scope="session")
+def redis_client() -> Redis:
+    """Tests use unique keys (e.g. a uuid in the name), so they don't clash with real runs."""
+    client = Redis.from_url(get_settings().redis_url)
+    try:
+        client.ping()
+    except RedisConnectionError as error:
+        pytest.fail(f"Can't reach Redis. Run `docker compose up -d`.\n{error}")
+    yield client
+    client.close()
 
 
 @pytest.fixture
