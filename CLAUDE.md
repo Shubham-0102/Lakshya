@@ -14,7 +14,8 @@
 
 - Phase 1 (Scraping basics): plan approved 2026-10-28. The approved plan, decisions and open questions are in `docs/phase-1-plan.md`.
 - Task 1 (repo skeleton) done.
-- Next: task 2 (source compliance check, no code). Show its detailed plan and wait for approval.
+- Task 2 (source compliance check) done: see `docs/sources.md`. Only jobsnepal is allowed; merojob, kumarijob, kantipurjob and ramrojob forbid scraping or reuse in their terms; hamrojob is a parked domain.
+- Waiting on: the user's choice of the 2 remaining Phase 1 sources, and the user sending permission emails (template in `docs/sources.md`).
 - Update this section whenever a task or phase is completed.
 
 ## Commands
