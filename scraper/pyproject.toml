@@ -3,7 +3,10 @@ name = "lakshya-scraper"
 version = "0.1.0"
 description = "Lakshya scrapers, cleaning, deduplication and scheduled tasks"
 requires-python = ">=3.13"
-dependencies = ["lakshya-backend"]
+dependencies = [
+    "lakshya-backend",
+    "pyyaml>=6.0.3",
+]
 
 [tool.uv.sources]
 lakshya-backend = { workspace = true }

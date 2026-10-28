@@ -35,3 +35,8 @@ select = ["E", "F", "I", "UP", "B"]
 testpaths = ["backend/tests"]
 # importlib mode lets backend/tests and scraper/tests both have e.g. test_models.py
 addopts = ["--import-mode=importlib"]
+
+[tool.alembic]
+script_location = "%(here)s/backend/migrations"
+# Files are named 0001_initial.py, 0002_... (pass --rev-id when creating a revision)
+file_template = "%%(rev)s_%%(slug)s"
