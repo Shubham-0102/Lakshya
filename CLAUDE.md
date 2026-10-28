@@ -21,7 +21,8 @@
 - Task 4 (schema and migrations) done: models in `backend/src/lakshya_backend/db/models.py`, migration 0001, `scraper/sources.yaml` + `sync_sources`.
 - Task 5 (common job format) done: `RawJob` and `CleanJob` in `scraper/src/lakshya_scraper/job_format.py`.
 - Task 6 (cleaning) done: `scraper/src/lakshya_scraper/cleaning/`, with `clean(raw) -> CleanJob | None` in `clean.py` and one pure module per field. Approved decisions: on-site jobs outside Nepal are dropped (remote ones kept); a salary with no currency is assumed NPR if ≥ 1,000; ambiguous numeric dates are day/month; a year ≥ 2070 means Bikram Sambat.
-- Next: task 7 (PoliteFetcher and the `run_source()` pipeline). Show its detailed plan and wait for approval.
+- Task 7 done: `fetching/` (hand-written RFC 9309 robots parser, Redis throttle per source, `PoliteFetcher` with Playwright) and `pipeline.py` (`run_source(slug)` → `scrape()`), `storage.py`, and the scraper contract in `scrapers/base.py`. `SCRAPERS` in `scrapers/__init__.py` is still empty.
+- Next: task 8 (scrapers for jobsnepal, F1Soft, Leapfrog + the `--dry-run` CLI). Show its detailed plan and wait for approval.
 - My shell runs on the user's machine in the same folder, so run checks directly instead of asking the user to paste output. Use `docker compose exec -T` (without `-T`, psql opens a pager and the output disappears).
 - GitHub: https://github.com/Shubham-0102/Lakshya (remote `origin`). Push only when the user asks. Push with `git -c credential.helper='!gh auth git-credential' push`; there is no global credential helper.
 - Update this section whenever a task or phase is completed.
@@ -47,6 +48,14 @@ cd frontend && npm run dev                         # Next.js 16 (untouched until
 
 - Tests use FastAPI's `TestClient`, which needs `httpx2` (Starlette deprecated `httpx` for it).
 - Add a dependency only in the task that needs it.
+
+## Scraper conventions
+
+- Every request to a site goes through `PoliteFetcher.fetch()`; never use httpx/requests/Playwright directly in a scraper.
+- A scraper only parses (`first_listing_url`, `parse_listing`, `parse_detail` → `RawJob`). Fetching, cleaning, saving and health live in the pipeline.
+- Put `title`/`location` on `ListingItem` when the listing shows them, so tenders and on-site jobs outside Nepal are skipped without a request.
+- Health: a run with a `problem` (zero jobs, listing failed, most job pages failed, 403/429) → `degraded`, then `failing` after 3 runs in a row. Hitting the request limit is not a problem.
+- Chromium for Playwright: `uv run playwright install chromium`.
 
 ## Database conventions
 
