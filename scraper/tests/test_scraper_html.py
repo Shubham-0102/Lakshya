@@ -1,3 +1,5 @@
+import pytest
+
 from lakshya_scraper.scrapers.html import (
     block_text,
     country_name,
@@ -70,3 +72,29 @@ def test_experience_line_needs_the_word_experience_and_a_number():
     assert experience_line(description) == "3+ years of experience with Python"
     assert experience_line("No numbers here, just experience") is None
     assert experience_line(None) is None
+
+
+@pytest.mark.parametrize(
+    "line",
+    [
+        # Real lines that mention experience and contain a number, but no amount of experience
+        "Interested candidates who meet the required qualifications and experience are requested "
+        "to apply through the portal by 2083/07/20",
+        "Technical proposal (maximum 8 pages, excluding CVs and annexes): How the applicant's "
+        "skills and experience fit",
+    ],
+)
+def test_lines_without_an_amount_of_experience_are_ignored(line):
+    assert experience_line(line) is None
+
+
+@pytest.mark.parametrize(
+    "line",
+    [
+        "1-2 of experience in full-stack development.",  # real F1Soft, "years" missing
+        "Preferrable; 3+ years of experience as a QA Engineer",
+        "6 months experience in sales",
+    ],
+)
+def test_lines_with_an_amount_of_experience_are_found(line):
+    assert experience_line(f"About the role\n{line}\nPerks") == line

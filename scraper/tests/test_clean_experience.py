@@ -20,7 +20,14 @@ def years(value):
             5,
             None,
         ),
+        (
+            "5+ years of experience with 2-3 years in people management, engineering "
+            "management, staff management, or a similar leadership role",  # Leapfrog
+            5,
+            None,
+        ),
         # Common forms
+        ("1-2 of experience in full-stack development.", 1, 2),  # real F1Soft: "years" missing
         ("2+ years", 2, None),
         ("1 to 2 years", 1, 2),
         ("3 yrs", 3, None),
@@ -32,6 +39,7 @@ def years(value):
         ("Less than 1 year", None, 1),
         # Freshers
         ("Fresher", 0, 0),
+        ("Fresh Graduate", 0, 0),  # real, jobsnepal
         ("Freshers can also apply", 0, 0),
         ("No experience required", 0, 0),
         ("Fresher or 1-2 years", 0, 2),

@@ -67,11 +67,18 @@ def labelled_value(soup: BeautifulSoup | Tag, label: str) -> str | None:
     return value.lstrip(":").strip() or None
 
 
-_EXPERIENCE_LINE = re.compile(r"(?=.*\bexperience\b)(?=.*\d)", re.IGNORECASE)
+# A line that mentions experience and states an amount of it: "3+ years", "6 months",
+# "2-3 yrs", or a range right before "experience" ("1-2 of experience")
+_EXPERIENCE_LINE = re.compile(
+    r"(?=.*\bexperience\b)"
+    r"(?=.*(\d+\s*\+?\s*((-|–|—|to)\s*\d+\s*\+?\s*)?(years?|yrs?|months?)\b"
+    r"|\d+\s*(-|–|—|to)\s*\d+\s+(of\s+)?experience))",
+    re.IGNORECASE,
+)
 
 
 def experience_line(description: str | None) -> str | None:
-    """The first line of a description that mentions experience and a number, e.g.
+    """The first line of a description that states how much experience is needed, e.g.
     "2-3 years of prior work experience in BA roles." (the cleaner parses it)."""
     lines = (description or "").splitlines()
     return next((line for line in lines if _EXPERIENCE_LINE.search(line)), None)
