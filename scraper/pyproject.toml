@@ -5,6 +5,7 @@ description = "Lakshya scrapers, cleaning, deduplication and scheduled tasks"
 requires-python = ">=3.13"
 dependencies = [
     "lakshya-backend",
+    "nepali-datetime>=1.0.8.5",
     "pyyaml>=6.0.3",
 ]
 

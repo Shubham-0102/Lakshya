@@ -20,7 +20,8 @@
 - Task 3 (Docker Compose) done.
 - Task 4 (schema and migrations) done: models in `backend/src/lakshya_backend/db/models.py`, migration 0001, `scraper/sources.yaml` + `sync_sources`.
 - Task 5 (common job format) done: `RawJob` and `CleanJob` in `scraper/src/lakshya_scraper/job_format.py`.
-- Next: task 6 (cleaning). Show its detailed plan and wait for approval.
+- Task 6 (cleaning) done: `scraper/src/lakshya_scraper/cleaning/`, with `clean(raw) -> CleanJob | None` in `clean.py` and one pure module per field. Approved decisions: on-site jobs outside Nepal are dropped (remote ones kept); a salary with no currency is assumed NPR if ≥ 1,000; ambiguous numeric dates are day/month; a year ≥ 2070 means Bikram Sambat.
+- Next: task 7 (PoliteFetcher and the `run_source()` pipeline). Show its detailed plan and wait for approval.
 - My shell runs on the user's machine in the same folder, so run checks directly instead of asking the user to paste output. Use `docker compose exec -T` (without `-T`, psql opens a pager and the output disappears).
 - GitHub: https://github.com/Shubham-0102/Lakshya (remote `origin`). Push only when the user asks. Push with `git -c credential.helper='!gh auth git-credential' push`; there is no global credential helper.
 - Update this section whenever a task or phase is completed.
