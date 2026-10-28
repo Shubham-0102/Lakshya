@@ -1,6 +1,10 @@
 # Source compliance review
 
-Checked on 2026-10-28 with the user agent `Lakshya/0.1 (+https://github.com/Shubham-0102; yadavvshubham0102@gmail.com)`, at least 5 seconds between requests to the same site (25 requests in total across 6 sites).
+Checked on 2026-10-28, with at least 5 seconds between requests to the same host:
+- **Job portals:** 25 requests across 6 sites, user agent `Lakshya/0.1 (+https://github.com/Shubham-0102; yadavvshubham0102@gmail.com)`.
+- **Company career pages:** about 27 requests across 7 companies and their job hosts, plus one headless-Chrome page view, user agent `Lakshya/0.1 (+https://github.com/Shubham-0102/Lakshya; yadavvshubham0102@gmail.com)`.
+
+**Proposed Phase 1 sources:** jobsnepal, F1Soft careers, Leapfrog careers (pending approval).
 
 **Decision rule**
 - **Allowed:** robots.txt allows the job pages and the terms of service do not forbid automated access or reuse.
@@ -73,6 +77,45 @@ This is a reading of what each site publishes, not legal advice. Terms change: r
   > No content may be copied, redistributed, or reused without prior written consent.
 - **Contact:** no email published; use the contact form on the site.
 
+## Company career pages
+
+Most of the Nepali portals forbid scraping (above), so the other Phase 1 sources are company career pages (option A). These are Nepali tech companies, chosen because they are the most relevant to the first users (CS students).
+
+| Company | Where the jobs are | robots.txt | Terms of service | Verdict |
+| --- | --- | --- | --- | --- |
+| **F1Soft** (F1Soft, eSewa, Fonepay, FoneNXT, eXtensoData…) | `career.f1soft.com` | Careers host allows everything; main `f1soft.com` blocks all but a few pages | None published on the careers host; none linked on `f1soft.com` | ✅ **Allowed** |
+| **Leapfrog Technology** | Listing on `www.lftechnology.com/careers`; job pages on `career.lftechnology.com` (Recruitee) | All three hosts allow it (`career.` only blocks `/v/`) | None published (only a privacy policy, which covers personal data only) | ✅ **Allowed** |
+| CloudFactory | `apply.workable.com/cloudfactory/` (Workable) | `apply.workable.com` allows everything | Workable's terms not checked | Backup, unverified |
+| Fusemachines | `fusemachines.com/company/careers/` | Allowed | — | ❌ No openings listed on the page |
+| Khalti | `blog.khalti.com/careers/` | `blog.khalti.com` has `Disallow: /` | — | ❌ Blocked by robots.txt |
+| Gurzu | — | — | — | ❌ No careers page linked |
+
+**Mistake to learn from:** for Khalti, the careers page was fetched once, 6 seconds after its robots.txt, without checking that robots.txt first. It turned out to say `Disallow: /`. The page was deleted without being used. This is why the robots check belongs inside `PoliteFetcher`, before every request, instead of being a step a person (or script) has to remember.
+
+### F1Soft careers: allowed
+
+- **Hosts:** `career.f1soft.com` robots.txt is `User-agent: *` / `Disallow:` (everything allowed). The main `f1soft.com` allows only a short list of pages (`/about`, `/business/*`, …); we don't need anything there.
+- **Terms:** no terms of service on the careers host, and none linked from the main site.
+- **Technical notes:**
+  - Server-rendered, so no JavaScript is needed. No JSON-LD `JobPosting` (only `WebPage`).
+  - Listing: `https://career.f1soft.com/jobs`, "Showing 1 to 8 of 15 results" (2 pages).
+  - Detail: `https://career.f1soft.com/jobs/<slug>`, e.g. `/jobs/business-analyst-fonenxt`. No numeric ID, so the slug is the `external_id`.
+  - Clearly labelled fields: company (the group company, e.g. FoneNXT, eSewa, eXtensoData), title, location ("F1Soft Tower, Pulchowk, Lalitpur District, Nepal"), "Application Deadline: Oct 30, 2026", "Last Updated: 3 weeks ago", job type (Full Time), level (Mid Level), department. Experience is in the text ("2-3 years of prior work experience").
+  - The listing shows relative deadlines ("Deadline: 2 weeks from now", "1 day from now"), so the cleaner must handle relative dates. Prefer the absolute date on the detail page.
+  - Company normalization: jobs are posted under group companies. Store the group company as the company, not "F1Soft".
+
+### Leapfrog Technology careers: allowed
+
+- **Hosts:** `www.lftechnology.com` (`Allow: /`), `api.lftechnology.com` (all rules commented out), `career.lftechnology.com` (`Disallow: /v/` only, with a sitemap).
+- **Terms:** no terms of service on any of the three hosts. The privacy policy (`/privacy-policy`) only covers personal data Leapfrog collects.
+- **Technical notes:**
+  - The listing at `https://www.lftechnology.com/careers` is **rendered by JavaScript**: the raw HTML has an empty "Current openings" section, and the openings appear only in a real browser. So this source needs Playwright.
+  - When checked, there were 9 openings: 6 in Kathmandu (including "Join our Talent Pool", which is not a real opening) and 3 in Pune, India.
+  - Detail: `https://career.lftechnology.com/o/<slug>` (Recruitee), server-rendered with full **JSON-LD `JobPosting`**: title, `hiringOrganization`, `jobLocation` (locality and country), `employmentType`, `datePosted`, `validThrough` (empty in the sample), `identifier.value` (numeric ID, e.g. 2379506, used as `external_id`).
+  - `career.lftechnology.com/sitemap.xml` probably lists every opening. If so, it is a no-JavaScript alternative for the listing step.
+  - The careers page also shows recruiter names and employee testimonials. These are personal data and must not be collected.
+  - Jobs outside Nepal (Pune) are out of scope unless they are remote. Decide in the cleaning task whether to drop them or keep them with their location.
+
 ## Permission request template
 
 The project owner sends these; nothing is sent automatically. Send to the blocked portals to ask for permission or a feed, and to jobsnepal as a courtesy.
@@ -81,7 +124,7 @@ The project owner sends these; nothing is sent automatically. Send to the blocke
 >
 > Hello,
 >
-> I'm Shubham Yadav, a computer science and AI student. I'm building Lakshya, a free, non-commercial job-search assistant that helps students find jobs that match their CV (https://github.com/Shubham-0102).
+> I'm Shubham Yadav, a computer science and AI student. I'm building Lakshya, a free, non-commercial job-search assistant that helps students find jobs that match their CV (https://github.com/Shubham-0102/Lakshya).
 >
 > I would like to include jobs from {SITE} in it. I would only show each job's title, company, deadline and a short summary, always with a link back to the original posting on {SITE}, where users would read the full post and apply. So it would send traffic to your site rather than replace it.
 >

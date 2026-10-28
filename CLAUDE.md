@@ -14,8 +14,10 @@
 
 - Phase 1 (Scraping basics): plan approved 2026-10-28. The approved plan, decisions and open questions are in `docs/phase-1-plan.md`.
 - Task 1 (repo skeleton) done.
-- Task 2 (source compliance check) done: see `docs/sources.md`. Only jobsnepal is allowed; merojob, kumarijob, kantipurjob and ramrojob forbid scraping or reuse in their terms; hamrojob is a parked domain.
-- Waiting on: the user's choice of the 2 remaining Phase 1 sources, and the user sending permission emails (template in `docs/sources.md`).
+- Task 2 (source compliance check) done: see `docs/sources.md`. Of the job portals, only jobsnepal is allowed; merojob, kumarijob, kantipurjob and ramrojob forbid scraping or reuse in their terms; hamrojob is a parked domain. Company career pages: F1Soft and Leapfrog are allowed.
+- Proposed Phase 1 sources: jobsnepal, F1Soft careers, Leapfrog careers. Waiting for the user's approval.
+- The user is sending permission emails to the blocked portals (template in `docs/sources.md`).
+- GitHub remote `origin` = https://github.com/Shubham-0102/Lakshya (nothing pushed yet; push only when the user asks).
 - Update this section whenever a task or phase is completed.
 
 ## Commands

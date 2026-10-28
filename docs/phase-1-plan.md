@@ -53,5 +53,5 @@ Approved 2026-10-28. Each task still gets its own detailed plan and approval bef
 **Not in Phase 1:** AI extraction, recipes, self-healing, cross-source deduplication, remote job feeds, any API endpoint besides `/health`, frontend pages, embeddings, the user tables, and tracing.
 
 ## Settled
-- User agent: `Lakshya/0.1 (+https://github.com/Shubham-0102; yadavvshubham0102@gmail.com)`. Switch the link to the repo URL once the repo is pushed to GitHub.
-- Sources checked first: merojob, jobsnepal and kumarijob. Backups, in order: kantipurjob, ramrojob, hamrojob, then company careers pages on public applicant-tracking systems (Lever, Greenhouse).
+- User agent: `Lakshya/0.1 (+https://github.com/Shubham-0102/Lakshya; yadavvshubham0102@gmail.com)`. Repo: https://github.com/Shubham-0102/Lakshya (remote `origin`).
+- Sources: see `docs/sources.md`. Of the job portals, only jobsnepal allows it. The other 2 Phase 1 sources are company career pages (option A), Nepali tech companies first.
