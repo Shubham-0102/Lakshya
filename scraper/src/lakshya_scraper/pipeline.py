@@ -2,9 +2,12 @@
 
 run_source(slug) is the entry point (used by the CLI and by Celery). scrape() is the
 pipeline itself, with the scraper, fetcher and session passed in so tests can use fakes.
+preview_source(slug) is the dry run: the same fetching and cleaning, nothing saved.
 """
 
 import logging
+from collections.abc import Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Literal
@@ -27,7 +30,9 @@ from lakshya_scraper.fetching import (
     PoliteFetcher,
     RobotsDisallowed,
     SiteAskedToStop,
+    StopRun,
 )
+from lakshya_scraper.job_format import CleanJob, RawJob
 from lakshya_scraper.scrapers import ListingItem, Scraper, get_scraper
 from lakshya_scraper.storage import known_external_ids, mark_seen, save_job
 
@@ -55,28 +60,72 @@ class RunResult:
     problem: str | None = None  # why the source is degraded; None means healthy
 
 
-def run_source(slug: str) -> RunResult:
-    settings = get_settings()
+@dataclass
+class Preview:
+    """One job page from a dry run: what the scraper read and what cleaning made of it."""
+
+    item: ListingItem
+    raw: RawJob | None = None
+    job: CleanJob | None = None  # None with no error: skipped by cleaning
+    error: str | None = None
+
+
+def run_source(slug: str, limit: int | None = None) -> RunResult:
+    """Scrape one source and save new jobs. `limit`: open at most this many job pages."""
     scraper = get_scraper(slug)
-    with get_session() as session, Redis.from_url(settings.redis_url) as redis:
-        source = session.scalars(select(Source).where(Source.slug == slug)).one()
-        ensure_allowed(source)
-        with sync_playwright() as playwright:
-            browser = playwright.chromium.launch()
-            try:
-                with PoliteFetcher(
-                    browser=browser,
-                    redis=redis,
-                    throttle_key=f"source:{slug}",
-                    min_delay=source.crawl_delay_seconds,  # at least 5 s (database constraint)
-                    user_agent=settings.scraper_user_agent,
-                    max_requests=settings.scraper_max_requests,
-                ) as fetcher:
-                    result = scrape(session, source, scraper, fetcher)
-            finally:
-                browser.close()
+    with get_session() as session:
+        source = _load_allowed_source(session, slug)
+        with open_fetcher(slug, source.crawl_delay_seconds) as fetcher:
+            result = scrape(session, source, scraper, fetcher, limit=limit)
     logger.info("run finished: %s", result)
     return result
+
+
+def preview_source(slug: str, limit: int = 3) -> Iterator[Preview]:
+    """Dry run: fetch, parse and clean up to `limit` job pages, without saving anything."""
+    scraper = get_scraper(slug)
+    with get_session() as session:
+        crawl_delay = _load_allowed_source(session, slug).crawl_delay_seconds
+
+    with open_fetcher(slug, crawl_delay) as fetcher:
+        items = collect_listing(scraper, fetcher, RunResult(slug))
+        for item in [item for item in items if worth_opening(item)][:limit]:
+            preview = Preview(item)
+            try:
+                html = fetcher.fetch(item.url, wait_for=scraper.detail_wait_for)
+                preview.raw = scraper.parse_detail(html, item)
+                preview.job = clean(preview.raw)
+            except StopRun:
+                raise
+            except Exception as error:
+                preview.error = f"{type(error).__name__}: {error}"
+            yield preview
+
+
+@contextmanager
+def open_fetcher(slug: str, crawl_delay: float) -> Iterator[PoliteFetcher]:
+    """A PoliteFetcher with a headless Chromium, closed again afterwards."""
+    settings = get_settings()
+    with Redis.from_url(settings.redis_url) as redis, sync_playwright() as playwright:
+        browser = playwright.chromium.launch()
+        try:
+            with PoliteFetcher(
+                browser=browser,
+                redis=redis,
+                throttle_key=f"source:{slug}",
+                min_delay=crawl_delay,  # at least 5 s (database constraint)
+                user_agent=settings.scraper_user_agent,
+                max_requests=settings.scraper_max_requests,
+            ) as fetcher:
+                yield fetcher
+        finally:
+            browser.close()
+
+
+def _load_allowed_source(session: Session, slug: str) -> Source:
+    source = session.scalars(select(Source).where(Source.slug == slug)).one()
+    ensure_allowed(source)
+    return source
 
 
 def ensure_allowed(source: Source) -> None:
@@ -84,12 +133,18 @@ def ensure_allowed(source: Source) -> None:
         raise SourceNotAllowed(f"{source.slug} is not enabled and approved (see sources.yaml)")
 
 
-def scrape(session: Session, source: Source, scraper: Scraper, fetcher: PoliteFetcher) -> RunResult:
+def scrape(
+    session: Session,
+    source: Source,
+    scraper: Scraper,
+    fetcher: PoliteFetcher,
+    limit: int | None = None,
+) -> RunResult:
     ensure_allowed(source)  # checked again here for callers that skip run_source
     started = datetime.now(UTC)
     result = RunResult(source.slug)
 
-    items = _collect_listing(scraper, fetcher, result)
+    items = collect_listing(scraper, fetcher, result)
 
     # Postings we already have are not fetched again
     known = known_external_ids(session, source.id)
@@ -98,12 +153,16 @@ def scrape(session: Session, source: Source, scraper: Scraper, fetcher: PoliteFe
     session.commit()
 
     new_items = [item for item in items if item.external_id not in known]
+    opened = 0
     for item in new_items:
         if result.stopped_early:
             break
-        if not _worth_opening(item):
+        if not worth_opening(item):
             result.skipped += 1
             continue
+        if limit is not None and opened >= limit:
+            break
+        opened += 1
         try:
             outcome = _process(session, source, scraper, fetcher, item)
         except PageLimitReached as stop:
@@ -127,7 +186,7 @@ def scrape(session: Session, source: Source, scraper: Scraper, fetcher: PoliteFe
     return result
 
 
-def _collect_listing(
+def collect_listing(
     scraper: Scraper, fetcher: PoliteFetcher, result: RunResult
 ) -> list[ListingItem]:
     items: dict[str, ListingItem] = {}
@@ -159,7 +218,7 @@ def _collect_listing(
     return list(items.values())
 
 
-def _worth_opening(item: ListingItem) -> bool:
+def worth_opening(item: ListingItem) -> bool:
     """Skip tenders and on-site jobs outside Nepal using what the listing already shows."""
     if item.title and not is_job_posting(item.title):
         logger.info("skipping %s: not a job posting (%r)", item.url, item.title)

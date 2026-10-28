@@ -272,3 +272,12 @@ def test_source_that_is_not_enabled_is_refused(db_session, source):
         scrape(db_session, source, FakeScraper(), fetcher)
 
     assert fetcher.fetched == []
+
+
+def test_limit_caps_how_many_job_pages_are_opened(db_session, source):
+    fetcher = FakeFetcher(site_with_jobs("1", "2", "3"))
+
+    result = scrape(db_session, source, FakeScraper(), fetcher, limit=1)
+
+    assert result.new == 1
+    assert fetcher.fetched == [FIRST_PAGE, f"{BASE}/jobs/1"]

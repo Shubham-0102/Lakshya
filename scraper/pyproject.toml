@@ -4,7 +4,9 @@ version = "0.1.0"
 description = "Lakshya scrapers, cleaning, deduplication and scheduled tasks"
 requires-python = ">=3.13"
 dependencies = [
+    "beautifulsoup4>=4.15.0",
     "lakshya-backend",
+    "lxml>=6.1.3",
     "nepali-datetime>=1.0.8.5",
     "playwright>=1.64.1",
     "pyyaml>=6.0.3",
