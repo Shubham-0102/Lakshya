@@ -67,6 +67,16 @@ def labelled_value(soup: BeautifulSoup | Tag, label: str) -> str | None:
     return value.lstrip(":").strip() or None
 
 
+_EXPERIENCE_LINE = re.compile(r"(?=.*\bexperience\b)(?=.*\d)", re.IGNORECASE)
+
+
+def experience_line(description: str | None) -> str | None:
+    """The first line of a description that mentions experience and a number, e.g.
+    "2-3 years of prior work experience in BA roles." (the cleaner parses it)."""
+    lines = (description or "").splitlines()
+    return next((line for line in lines if _EXPERIENCE_LINE.search(line)), None)
+
+
 def country_name(code: str | None) -> str | None:
     if not code:
         return None

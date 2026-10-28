@@ -73,3 +73,20 @@ def test_job_page_cleans_into_a_complete_job():
     assert job.deadline == date(2026, 11, 18)
     assert (job.experience_min_years, job.experience_max_years) == (Decimal("5"), None)
     assert job.company_normalized_name == "national federation of women living with hiv and aids"
+
+
+def test_experience_falls_back_to_the_description_when_the_field_has_no_number():
+    html = (
+        read("job.html")
+        .replace("5+ years", "Please check vacancy details.")
+        .replace(
+            "Position: Admin/Finance Coordinator", "Minimum of 5 years of experience in finance"
+        )
+    )
+
+    raw = scraper.parse_detail(html, JOB)
+
+    assert (
+        raw.experience
+        == "Minimum of 5 years of experience in finance -1 (Treatment Care and Support Program)"
+    )

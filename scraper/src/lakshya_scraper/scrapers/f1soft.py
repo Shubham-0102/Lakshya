@@ -7,15 +7,19 @@ Job page: a "Job Overview" box of bold labels ("Organization Name:", "Location:"
 "Application Deadline:") and the description in div.job-content.
 """
 
-import re
 from urllib.parse import urljoin, urlsplit
 
 from lakshya_scraper.job_format import RawJob
 from lakshya_scraper.scrapers.base import ListingItem, ListingPage, Scraper
-from lakshya_scraper.scrapers.html import block_text, labelled_value, parse_html, text
+from lakshya_scraper.scrapers.html import (
+    block_text,
+    experience_line,
+    labelled_value,
+    parse_html,
+    text,
+)
 
 BASE_URL = "https://career.f1soft.com"
-_EXPERIENCE_LINE = re.compile(r"(?=.*\bexperience\b)(?=.*\d)", re.IGNORECASE)
 
 
 class F1SoftScraper(Scraper):
@@ -57,11 +61,7 @@ class F1SoftScraper(Scraper):
             location=labelled_value(soup, "Location"),
             salary=labelled_value(soup, "Salary"),
             # The line of the qualifications that states the experience needed
-            experience=_first_line(description, _EXPERIENCE_LINE),
+            experience=experience_line(description),
             deadline=labelled_value(soup, "Application Deadline"),
             description=description,
         )
-
-
-def _first_line(text_block: str | None, pattern: re.Pattern) -> str | None:
-    return next((line for line in (text_block or "").splitlines() if pattern.search(line)), None)

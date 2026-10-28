@@ -1,6 +1,7 @@
 from lakshya_scraper.scrapers.html import (
     block_text,
     country_name,
+    experience_line,
     html_to_text,
     json_ld_job_posting,
     labelled_value,
@@ -59,3 +60,13 @@ def test_country_codes_become_names_the_cleaner_knows():
     assert country_name("in") == "India"
     assert country_name("ZZ") == "ZZ"
     assert country_name(None) is None
+
+
+def test_experience_line_needs_the_word_experience_and_a_number():
+    description = (
+        "About us\nGreat experience for learners\n3+ years of experience with Python\nPerks"
+    )
+
+    assert experience_line(description) == "3+ years of experience with Python"
+    assert experience_line("No numbers here, just experience") is None
+    assert experience_line(None) is None

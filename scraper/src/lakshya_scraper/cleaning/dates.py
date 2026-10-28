@@ -45,7 +45,8 @@ _FROM_NOW = re.compile(
     rf"\bin\s+{_COUNT_UNIT}\b|\b{_COUNT_UNIT}\s+(?:from now|left|remaining|to go)\b"
 )
 _AGO = re.compile(rf"\b{_COUNT_UNIT}\s+ago\b")
-_YEAR_FIRST = re.compile(r"\b(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})\b")
+# (?!\d) rather than \b at the end, so ISO timestamps like "2026-11-30T23:59:59" match too
+_YEAR_FIRST = re.compile(r"\b(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})(?!\d)")
 _DAY_FIRST = re.compile(r"\b(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})\b")
 _NAMED_AD = re.compile(r"\b([a-z]+\s+\d{1,2}\s+\d{4}|\d{1,2}\s+[a-z]+\s+\d{4})\b")
 _AD_FORMATS = ["%b %d %Y", "%B %d %Y", "%d %b %Y", "%d %B %Y"]

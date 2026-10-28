@@ -69,3 +69,9 @@ def test_real_sources_file_is_valid_and_only_approved_sources_are_enabled():
 
     assert {c.slug for c in configs if c.enabled} == {"jobsnepal", "f1soft", "leapfrog"}
     assert all(c.compliance_status == ComplianceStatus.APPROVED for c in configs if c.enabled)
+
+
+def test_every_enabled_source_has_a_scraper_and_nothing_else_does():
+    from lakshya_scraper.scrapers import SCRAPERS
+
+    assert set(SCRAPERS) == {config.slug for config in load_sources() if config.enabled}

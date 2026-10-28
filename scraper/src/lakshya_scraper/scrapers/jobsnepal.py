@@ -10,7 +10,13 @@ from urllib.parse import urljoin
 
 from lakshya_scraper.job_format import RawJob
 from lakshya_scraper.scrapers.base import ListingItem, ListingPage, Scraper
-from lakshya_scraper.scrapers.html import block_text, country_name, parse_html, text
+from lakshya_scraper.scrapers.html import (
+    block_text,
+    country_name,
+    experience_line,
+    parse_html,
+    text,
+)
 
 BASE_URL = "https://www.jobsnepal.com"
 _JOB_ID = re.compile(r"-(\d+)$")  # .../adminfinance-coordinator-144747 -> 144747
@@ -54,6 +60,12 @@ class JobsNepalScraper(Scraper):
                 return None
             return element.get("content") or text(element)  # <meta content="..."> or visible text
 
+        description = block_text(job.select_one('#div-job-details [itemprop="description"]'))
+        # The structured field sometimes says only "Please check vacancy details."
+        experience = prop("experienceRequirements")
+        if not experience or not re.search(r"\d", experience):
+            experience = experience_line(description) or experience
+
         location = ", ".join(
             part for part in (prop("addressLocality"), country_name(prop("addressCountry"))) if part
         )
@@ -65,8 +77,8 @@ class JobsNepalScraper(Scraper):
             company=text(job.select_one('[itemprop="hiringOrganization"] [itemprop="name"]')),
             location=location or None,
             salary=prop("baseSalary"),
-            experience=prop("experienceRequirements"),
+            experience=experience,
             deadline=text(job.select_one("span.apply-deadline")) or prop("validThrough"),
             posted=text(job.select_one("span.job-posted-on")) or prop("datePosted"),
-            description=block_text(job.select_one('#div-job-details [itemprop="description"]')),
+            description=description,
         )
