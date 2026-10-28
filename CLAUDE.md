@@ -18,7 +18,8 @@
 - Approved Phase 1 sources: jobsnepal, F1Soft careers, Leapfrog careers.
 - The user is sending permission emails to the blocked portals (template in `docs/sources.md`).
 - Task 3 (Docker Compose) done.
-- Next: task 4 (schema and migrations). Show its detailed plan and wait for approval.
+- Task 4 (schema and migrations) done: models in `backend/src/lakshya_backend/db/models.py`, migration 0001, `scraper/sources.yaml` + `sync_sources`.
+- Next: task 5 (common job format: `RawJob` and `CleanJob`). Show its detailed plan and wait for approval.
 - GitHub: https://github.com/Shubham-0102/Lakshya (remote `origin`). Push only when the user asks. Push with `git -c credential.helper='!gh auth git-credential' push`; there is no global credential helper.
 - Update this section whenever a task or phase is completed.
 
@@ -31,7 +32,10 @@ cp .env.example .env                               # once; .env is git-ignored
 docker compose up -d                               # Postgres+pgvector on localhost:5433, Redis on localhost:6380
 docker compose exec db psql -U lakshya -d lakshya  # SQL shell (tests use database lakshya_test)
 uv sync                                            # install everything into .venv
-uv run pytest                                      # tests
+uv run alembic upgrade head                        # apply migrations to the dev database
+uv run alembic revision --autogenerate --rev-id 0002 -m "..."   # new migration (review it by hand)
+uv run python -m lakshya_scraper.sync_sources      # load scraper/sources.yaml into the sources table
+uv run pytest                                      # tests (need docker compose up)
 uv run ruff check . && uv run ruff format --check . # lint + format check (CI runs the same)
 uv run uvicorn lakshya_backend.main:app --reload   # API, GET /health
 uv add --package lakshya-backend <dep>             # add a dependency to one package
@@ -40,6 +44,16 @@ cd frontend && npm run dev                         # Next.js 16 (untouched until
 
 - Tests use FastAPI's `TestClient`, which needs `httpx2` (Starlette deprecated `httpx` for it).
 - Add a dependency only in the task that needs it.
+
+## Database conventions
+
+- Sync SQLAlchemy 2 + psycopg 3. Alembic settings are in `[tool.alembic]` in `pyproject.toml`; `alembic.ini` is a stub the CLI requires. The URL comes from `.env` via `lakshya_backend.config.Settings`.
+- Enums are stored as text + CHECK constraints (`text_enum` in `db/base.py`), not native Postgres enums.
+- All constraints are named by the naming convention in `db/base.py`. Tests match on those names.
+- Scraping rules live in the schema: `ck_sources_enabled_only_if_approved`, `ck_sources_polite_crawl_delay`.
+- Add columns only in the phase that needs them, each with its own migration (`recipe` in Phase 2, `embedding` in Phase 3, `scam_score` in Phase 5).
+- DB test fixtures are in the root `conftest.py`: `db_session` (rolled back after each test) and `alembic_cfg`. The fixture wipes `TEST_DATABASE_URL` and refuses databases whose names don't end in `_test`.
+- `test_models_match_migrations` fails if a model changes without a migration.
 
 ## How the product works
 

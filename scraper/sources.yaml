@@ -1,0 +1,68 @@
+# Every source we have reviewed, with its compliance verdict. Quotes and details: docs/sources.md
+# Only "approved" sources can be enabled; the database rejects anything else.
+# Load into the database:  uv run python -m lakshya_scraper.sync_sources
+# Removing an entry here does not delete it from the database; set enabled: false instead.
+
+sources:
+  # Approved: robots.txt allows the job pages and no terms of service forbid it
+  - slug: jobsnepal
+    name: JobsNepal
+    base_url: https://www.jobsnepal.com
+    type: portal
+    compliance_status: approved
+    compliance_notes: robots.txt allows all; no terms of service published (checked 2026-10-28)
+    enabled: true
+
+  - slug: f1soft
+    name: F1Soft Careers
+    base_url: https://career.f1soft.com
+    type: career_page
+    compliance_status: approved
+    compliance_notes: careers host robots.txt allows all; no terms published (checked 2026-10-28)
+    enabled: true
+
+  - slug: leapfrog
+    name: Leapfrog Technology Careers
+    base_url: https://www.lftechnology.com/careers
+    type: career_page
+    compliance_status: approved
+    compliance_notes: >-
+      robots.txt allows the job pages on www., api. and career.lftechnology.com;
+      no terms published (checked 2026-10-28)
+    enabled: true
+
+  # Blocked: we asked (or will ask) for permission instead
+  - slug: merojob
+    name: Merojob
+    base_url: https://merojob.com
+    type: portal
+    compliance_status: blocked
+    compliance_notes: terms forbid data scraping and copying listings to third-party platforms
+
+  - slug: kumarijob
+    name: Kumari Job
+    base_url: https://www.kumarijob.com
+    type: portal
+    compliance_status: blocked
+    compliance_notes: terms allow personal, non-commercial use only
+
+  - slug: kantipurjob
+    name: Kantipur Job
+    base_url: https://kantipurjob.com
+    type: portal
+    compliance_status: blocked
+    compliance_notes: terms forbid republication (even not-for-profit) and deep links
+
+  - slug: ramrojob
+    name: Ramro Job
+    base_url: https://www.ramrojob.com
+    type: portal
+    compliance_status: blocked
+    compliance_notes: terms forbid copying or reuse without written consent
+
+  - slug: khalti
+    name: Khalti Careers
+    base_url: https://blog.khalti.com/careers/
+    type: career_page
+    compliance_status: blocked
+    compliance_notes: "blog.khalti.com robots.txt is Disallow: / for all crawlers"

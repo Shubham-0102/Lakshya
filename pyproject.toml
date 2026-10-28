@@ -32,7 +32,7 @@ src = ["backend/src", "scraper/src"]
 select = ["E", "F", "I", "UP", "B"]
 
 [tool.pytest.ini_options]
-testpaths = ["backend/tests"]
+testpaths = ["backend/tests", "scraper/tests"]
 # importlib mode lets backend/tests and scraper/tests both have e.g. test_models.py
 addopts = ["--import-mode=importlib"]
 

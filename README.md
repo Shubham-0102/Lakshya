@@ -26,9 +26,11 @@ cp .env.example .env
 docker compose up -d
 docker compose ps                     # both should show "healthy"
 
-# 3. Python packages and tests
+# 3. Python packages, database tables and sources
 uv sync
-uv run pytest
+uv run alembic upgrade head                   # create/upgrade the tables
+uv run python -m lakshya_scraper.sync_sources # load scraper/sources.yaml into the sources table
+uv run pytest                                 # tests use the separate lakshya_test database
 
 # 4. API (leave running in its own terminal)
 uv run uvicorn lakshya_backend.main:app --reload
