@@ -15,9 +15,11 @@
 - Phase 1 (Scraping basics): plan approved 2026-10-28. The approved plan, decisions and open questions are in `docs/phase-1-plan.md`.
 - Task 1 (repo skeleton) done.
 - Task 2 (source compliance check) done: see `docs/sources.md`. Of the job portals, only jobsnepal is allowed; merojob, kumarijob, kantipurjob and ramrojob forbid scraping or reuse in their terms; hamrojob is a parked domain. Company career pages: F1Soft and Leapfrog are allowed.
-- Proposed Phase 1 sources: jobsnepal, F1Soft careers, Leapfrog careers. Waiting for the user's approval.
+- Approved Phase 1 sources: jobsnepal, F1Soft careers, Leapfrog careers.
 - The user is sending permission emails to the blocked portals (template in `docs/sources.md`).
-- GitHub remote `origin` = https://github.com/Shubham-0102/Lakshya (nothing pushed yet; push only when the user asks).
+- Task 3 (Docker Compose) done.
+- Next: task 4 (schema and migrations). Show its detailed plan and wait for approval.
+- GitHub: https://github.com/Shubham-0102/Lakshya (remote `origin`). Push only when the user asks. Push with `git -c credential.helper='!gh auth git-credential' push`; there is no global credential helper.
 - Update this section whenever a task or phase is completed.
 
 ## Commands
@@ -25,6 +27,9 @@
 Python uses a uv workspace (root `pyproject.toml`; members `backend`, `scraper`). Import names are `lakshya_backend` and `lakshya_scraper`, in src layout (`backend/src/lakshya_backend/`).
 
 ```bash
+cp .env.example .env                               # once; .env is git-ignored
+docker compose up -d                               # Postgres+pgvector on localhost:5433, Redis on localhost:6380
+docker compose exec db psql -U lakshya -d lakshya  # SQL shell (tests use database lakshya_test)
 uv sync                                            # install everything into .venv
 uv run pytest                                      # tests
 uv run ruff check . && uv run ruff format --check . # lint + format check (CI runs the same)

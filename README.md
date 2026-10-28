@@ -14,14 +14,47 @@ An AI job agent for Nepal. Lakshya (लक्ष्य, "goal") collects jobs fr
 | `frontend/` | Next.js + TypeScript web app |
 | `docs/` | Plans and design notes |
 
-## Quick start (so far)
+## Run it locally
 
-Requires [uv](https://docs.astral.sh/uv/) and Node.js 20+.
+Requires [Docker](https://docs.docker.com/get-docker/), [uv](https://docs.astral.sh/uv/) and Node.js 20+.
 
 ```bash
-uv sync                                               # install all Python packages into .venv
-uv run pytest                                         # run tests
-uv run uvicorn lakshya_backend.main:app --reload      # API at http://localhost:8000/health
+# 1. Settings (once)
+cp .env.example .env
+
+# 2. Postgres (with pgvector) and Redis in Docker
+docker compose up -d
+docker compose ps                     # both should show "healthy"
+
+# 3. Python packages and tests
+uv sync
+uv run pytest
+
+# 4. API (leave running in its own terminal)
+uv run uvicorn lakshya_backend.main:app --reload
+
+# 5. Frontend (another terminal; it is still the default Next.js page)
+cd frontend && npm install && npm run dev
+```
+
+| What | Where |
+| --- | --- |
+| API health check | http://localhost:8000/health |
+| API docs (Swagger UI) | http://localhost:8000/docs |
+| Frontend | http://localhost:3000 |
+| Postgres | `localhost:5433`, database `lakshya` (tests use `lakshya_test`) |
+| Redis | `localhost:6380` |
+
+Postgres and Redis use ports 5433 and 6380, not the defaults, so they don't clash with a Postgres or Redis already installed on your machine. Change them in `.env`.
+
+Useful commands:
+
+```bash
+docker compose exec db psql -U lakshya -d lakshya    # SQL shell
+docker compose exec redis redis-cli                  # Redis shell
+docker compose logs -f db                            # follow logs
+docker compose down                                  # stop (data is kept)
+docker compose down -v                               # stop and delete all data
 ```
 
 See `PLAN.md` for the full project plan.
