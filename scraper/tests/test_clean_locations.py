@@ -31,6 +31,7 @@ from lakshya_scraper.cleaning.locations import clean_location, is_known_place
         ("Work from home", None, True, False),
         ("Kathmandu (Hybrid/Remote)", "Kathmandu", True, False),
         ("Remote (USA)", "Remote (USA)", True, True),
+        ("Remote, Nepal", "Nepal", True, False),
     ],
 )
 def test_clean_location(text, name, is_remote, outside_nepal):
@@ -59,3 +60,9 @@ def test_is_known_place(text):
 @pytest.mark.parametrize("text", ["eXtensoData", "Engineering", "Aquaculture Grants Support"])
 def test_is_not_a_place(text):
     assert not is_known_place(text)
+
+
+def test_unknown_district_in_nepal_is_kept_instead_of_just_nepal():
+    location = clean_location("Dhading, Nepal")  # real, jobsnepal
+
+    assert (location.name, location.outside_nepal, location.recognized) == ("Dhading", False, False)

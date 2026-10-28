@@ -88,7 +88,7 @@ def preview_source(slug: str, limit: int = 3) -> Iterator[Preview]:
         crawl_delay = _load_allowed_source(session, slug).crawl_delay_seconds
 
     with open_fetcher(slug, crawl_delay) as fetcher:
-        items = collect_listing(scraper, fetcher, RunResult(slug))
+        items = collect_listing(scraper, fetcher, RunResult(slug), max_pages=1)
         for item in [item for item in items if worth_opening(item)][:limit]:
             preview = Preview(item)
             try:
@@ -187,7 +187,7 @@ def scrape(
 
 
 def collect_listing(
-    scraper: Scraper, fetcher: PoliteFetcher, result: RunResult
+    scraper: Scraper, fetcher: PoliteFetcher, result: RunResult, max_pages: int | None = None
 ) -> list[ListingItem]:
     items: dict[str, ListingItem] = {}
     url: str | None = scraper.first_listing_url()
@@ -200,7 +200,7 @@ def collect_listing(
             result.listing_pages += 1
             for item in page.items:
                 items.setdefault(item.external_id, item)
-            if not page.items:
+            if not page.items or result.listing_pages == max_pages:
                 break
             url = page.next_url
     except PageLimitReached as stop:

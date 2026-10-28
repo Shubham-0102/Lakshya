@@ -25,7 +25,7 @@ _NOT_A_JOB = re.compile(
     r"call for (bids?|proposals?|quotations?|tenders?)|invitation for (bids?|quotations?)"
     r"|bid notice|sealed quotation|expression of interest|\beoi\b|terms of reference|\btor\b"
     r"|request for (proposals?|quotations?)|\brfp\b|\brfq\b|\btenders?\b|talent pool"
-    r"|बोलपत्र|दरभाउपत्र",  # Nepali: bid, quotation
+    r"|बोलपत्र|दरभाउ\s*पत्र|टेण्डर|टेन्डर|[शस]िलबन्दी",  # Nepali: bid, quotation, tender, sealed
     re.IGNORECASE,
 )
 

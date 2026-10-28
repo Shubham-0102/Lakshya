@@ -40,6 +40,7 @@ def test_clean_title(raw, expected):
         "CALL FOR EXPRESSION OF INTEREST (EOI)",  # real, jobsnepal
         "Expression of Interest (EOI) for Consultancy Service for Baseline Study",  # real
         "बोलपत्र आह्वान (Call for Bid)",  # real, jobsnepal ("bid invitation")
+        "निर्माण कार्यको लागि टेण्डर (शिलबन्दी दरभाउ पत्र) आह्वान सम्बन्धि सूचना",  # real, jobsnepal
         "Join our Talent Pool",  # real, Leapfrog
         "Terms of Reference (ToR) for External Auditing Services",
         "Request for Proposal: Website Redesign",

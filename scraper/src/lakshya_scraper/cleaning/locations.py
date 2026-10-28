@@ -88,6 +88,15 @@ def clean_location(text: str) -> Location:
     if match := _CITY.search(lowered):
         return Location(_ALIAS_TO_CITY[match.group(1)], is_remote, False, True)
     if _NEPAL.search(lowered):
+        # Keep a place we don't know yet: "Dhading, Nepal" -> "Dhading" (logged so the
+        # alias list can grow). Phrases like "All over Nepal" become just "Nepal".
+        parts = [
+            part.strip()
+            for part in text.split(",")
+            if part.strip().lower() != "nepal" and _REMOTE.sub("", part.lower()).strip(" ()")
+        ]
+        if parts and not any(_NEPAL.search(part.lower()) for part in parts):
+            return Location(", ".join(parts), is_remote, False, False)
         return Location("Nepal", is_remote, False, True)
 
     outside_nepal = bool(_FOREIGN.search(lowered))

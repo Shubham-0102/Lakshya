@@ -19,7 +19,7 @@ from lakshya_backend.db.models import (
 )
 from lakshya_scraper.fetching import FetchError, PageLimitReached, RobotsDisallowed, SiteAskedToStop
 from lakshya_scraper.job_format import RawJob
-from lakshya_scraper.pipeline import SourceNotAllowed, scrape
+from lakshya_scraper.pipeline import RunResult, SourceNotAllowed, collect_listing, scrape
 from lakshya_scraper.scrapers import ListingItem, ListingPage, Scraper
 
 BASE = "https://jobs.example.com"
@@ -281,3 +281,15 @@ def test_limit_caps_how_many_job_pages_are_opened(db_session, source):
 
     assert result.new == 1
     assert fetcher.fetched == [FIRST_PAGE, f"{BASE}/jobs/1"]
+
+
+def test_collect_listing_can_stop_after_the_first_page():
+    second_page = f"{BASE}/jobs?page=2"
+    fetcher = FakeFetcher(
+        {FIRST_PAGE: listing({"id": "1"}, next_url=second_page), second_page: listing({"id": "2"})}
+    )
+
+    items = collect_listing(FakeScraper(), fetcher, RunResult("example"), max_pages=1)
+
+    assert [item.external_id for item in items] == ["1"]
+    assert fetcher.fetched == [FIRST_PAGE]

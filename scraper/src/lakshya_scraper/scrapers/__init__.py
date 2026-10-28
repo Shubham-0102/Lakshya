@@ -1,9 +1,12 @@
 """One scraper per approved source; each turns its site's pages into RawJobs."""
 
 from lakshya_scraper.scrapers.base import ListingItem, ListingPage, Scraper
+from lakshya_scraper.scrapers.jobsnepal import JobsNepalScraper
 
-# slug -> scraper class. The site scrapers are added in Phase 1 task 8.
-SCRAPERS: dict[str, type[Scraper]] = {}
+# slug -> scraper class; one per enabled source in sources.yaml
+SCRAPERS: dict[str, type[Scraper]] = {
+    JobsNepalScraper.slug: JobsNepalScraper,
+}
 
 
 def get_scraper(slug: str) -> Scraper:
