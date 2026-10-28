@@ -1,0 +1,37 @@
+# Workspace root. It is not a package itself: it ties the Python packages
+# together so one `uv sync` installs all of them into one .venv with one lockfile.
+[project]
+name = "lakshya"
+version = "0.1.0"
+description = "Lakshya: an AI job agent for Nepal"
+requires-python = ">=3.13"
+dependencies = ["lakshya-backend", "lakshya-scraper"]
+
+[tool.uv.workspace]
+members = ["backend", "scraper"]
+
+[tool.uv.sources]
+lakshya-backend = { workspace = true }
+lakshya-scraper = { workspace = true }
+
+[dependency-groups]
+dev = [
+    "httpx2>=2.16.0",
+    "pytest>=9.2.0",
+    "ruff>=0.17.3",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+# Where our own packages live, so imports of them sort as first-party
+src = ["backend/src", "scraper/src"]
+
+[tool.ruff.lint]
+# E/F: pycodestyle + pyflakes, I: import sorting, UP: modern syntax, B: likely bugs
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.pytest.ini_options]
+testpaths = ["backend/tests"]
+# importlib mode lets backend/tests and scraper/tests both have e.g. test_models.py
+addopts = ["--import-mode=importlib"]

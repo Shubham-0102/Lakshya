@@ -1,0 +1,13 @@
+[project]
+name = "lakshya-scraper"
+version = "0.1.0"
+description = "Lakshya scrapers, cleaning, deduplication and scheduled tasks"
+requires-python = ">=3.13"
+dependencies = ["lakshya-backend"]
+
+[tool.uv.sources]
+lakshya-backend = { workspace = true }
+
+[build-system]
+requires = ["uv_build>=0.13.6,<0.14.0"]
+build-backend = "uv_build"
