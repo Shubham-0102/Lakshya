@@ -5,7 +5,7 @@ import re
 
 from bs4 import BeautifulSoup, Tag
 
-from lakshya_scraper.cleaning.text import squash
+from lakshya_scraper.cleaning.text import NUMBER_WORD, squash
 
 _BLOCK_TAGS = ["p", "div", "li", "ul", "ol", "br", "tr", "h1", "h2", "h3", "h4", "h5", "h6"]
 
@@ -67,12 +67,14 @@ def labelled_value(soup: BeautifulSoup | Tag, label: str) -> str | None:
     return value.lstrip(":").strip() or None
 
 
-# A line that mentions experience and states an amount of it: "3+ years", "6 months",
-# "2-3 yrs", or a range right before "experience" ("1-2 of experience")
+# An amount of experience: "3+ years", "2-3 yrs", "6 months", "three years"
+_AMOUNT = rf"(\d+|\b({NUMBER_WORD}))\s*\+?\s*((-|–|—|to)\s*\d+\s*\+?\s*)?(years?|yrs?|months?)\b"
+# The amount and the word "experience" must be close and in the same sentence ([^.;]),
+# so "...educational experience of children. It is two years of programme" doesn't count
 _EXPERIENCE_LINE = re.compile(
-    r"(?=.*\bexperience\b)"
-    r"(?=.*(\d+\s*\+?\s*((-|–|—|to)\s*\d+\s*\+?\s*)?(years?|yrs?|months?)\b"
-    r"|\d+\s*(-|–|—|to)\s*\d+\s+(of\s+)?experience))",
+    rf"{_AMOUNT}[^.;]{{0,60}}?\bexperience"  # "5 years of relevant experience"
+    rf"|\bexperience\b[^.;]{{0,25}}?{_AMOUNT}"  # "Experience: minimum 1 year"
+    r"|\d+\s*(-|–|—|to)\s*\d+\s+(of\s+)?experience",  # "1-2 of experience" (unit left out)
     re.IGNORECASE,
 )
 

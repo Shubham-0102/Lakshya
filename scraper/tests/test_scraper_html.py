@@ -82,6 +82,11 @@ def test_experience_line_needs_the_word_experience_and_a_number():
         "to apply through the portal by 2083/07/20",
         "Technical proposal (maximum 8 pages, excluding CVs and annexes): How the applicant's "
         "skills and experience fit",
+        "4. Required Qualifications and Experience",  # real
+        # Real: "experience" and "two years" are in different sentences
+        "It offers placements in order to help transform the educational experience of "
+        "children. It is two years of supervised programme to increase literacy",
+        "Technologies: Strong experience in HTML5, CSS3, JavaScript/TypeScript, React,",  # real
     ],
 )
 def test_lines_without_an_amount_of_experience_are_ignored(line):
@@ -94,6 +99,10 @@ def test_lines_without_an_amount_of_experience_are_ignored(line):
         "1-2 of experience in full-stack development.",  # real F1Soft, "years" missing
         "Preferrable; 3+ years of experience as a QA Engineer",
         "6 months experience in sales",
+        "At least three years of experience in delivering vocational training",  # real
+        "Experience: Minimum 1 year of proven professional experience in a related role.",  # real
+        "Qualification and Experience: Master's degree in Forestry, (Ph.D. preferred) with a "
+        "minimum of 5 years of relevant experience in Capacity building",  # real
     ],
 )
 def test_lines_with_an_amount_of_experience_are_found(line):

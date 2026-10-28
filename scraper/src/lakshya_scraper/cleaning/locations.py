@@ -67,6 +67,8 @@ _CITY = _whole_words(list(_ALIAS_TO_CITY))
 _FOREIGN = _whole_words(_FOREIGN_PLACES)
 _NEPAL = re.compile(r"\bnepal\b")
 _REMOTE = re.compile(r"\b(remote|work from home|wfh|telecommut\w*|telework\w*|worldwide)\b")
+# Placeholders from sites' posting forms that name no place, e.g. "Other - Specify"
+_PLACEHOLDER = re.compile(r"^(other( ?- ?specify)?|n/?a|not specified|-+)$")
 _DISTRICT_WORDS = re.compile(
     r"\b(sub-?\s?metropolitan city|metropolitan city|municipality|district)\b"
 )
@@ -82,6 +84,8 @@ class Location(NamedTuple):
 def clean_location(text: str) -> Location:
     text = squash(text)
     lowered = text.lower()
+    if _PLACEHOLDER.match(lowered):
+        return Location(None, False, False, True)
     is_remote = bool(_REMOTE.search(lowered))
 
     # The first known place wins: in "Pulchowk, Lalitpur District" that's Pulchowk -> Lalitpur
@@ -93,7 +97,9 @@ def clean_location(text: str) -> Location:
         parts = [
             part.strip()
             for part in text.split(",")
-            if part.strip().lower() != "nepal" and _REMOTE.sub("", part.lower()).strip(" ()")
+            if part.strip().lower() != "nepal"
+            and not _PLACEHOLDER.match(part.strip().lower())
+            and _REMOTE.sub("", part.lower()).strip(" ()")
         ]
         if parts and not any(_NEPAL.search(part.lower()) for part in parts):
             return Location(", ".join(parts), is_remote, False, False)

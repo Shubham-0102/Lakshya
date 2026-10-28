@@ -47,6 +47,18 @@ cd frontend && npm install && npm run dev
 | Postgres | `localhost:5433`, database `lakshya` (tests use `lakshya_test`) |
 | Redis | `localhost:6380` |
 
+### Scrape jobs
+
+```bash
+uv run playwright install chromium                            # once: the headless browser
+uv run python -m lakshya_scraper run jobsnepal --dry-run --limit 3   # fetch + clean 3 jobs, save nothing
+uv run python -m lakshya_scraper run jobsnepal                # real run: saves new jobs
+```
+
+Sources: `jobsnepal`, `f1soft`, `leapfrog` (see `docs/sources.md` for why these three). Every request
+checks robots.txt, waits at least 5 seconds per site, and identifies itself as `Lakshya/0.1`. A second
+run only reads the listing pages: jobs already stored are not fetched again.
+
 Postgres and Redis use ports 5433 and 6380, not the defaults, so they don't clash with a Postgres or Redis already installed on your machine. Change them in `.env`.
 
 Useful commands:

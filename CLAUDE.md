@@ -22,7 +22,10 @@
 - Task 5 (common job format) done: `RawJob` and `CleanJob` in `scraper/src/lakshya_scraper/job_format.py`.
 - Task 6 (cleaning) done: `scraper/src/lakshya_scraper/cleaning/`, with `clean(raw) -> CleanJob | None` in `clean.py` and one pure module per field. Approved decisions: on-site jobs outside Nepal are dropped (remote ones kept); a salary with no currency is assumed NPR if ≥ 1,000; ambiguous numeric dates are day/month; a year ≥ 2070 means Bikram Sambat.
 - Task 7 done: `fetching/` (hand-written RFC 9309 robots parser, Redis throttle per source, `PoliteFetcher` with Playwright) and `pipeline.py` (`run_source(slug)` → `scrape()`), `storage.py`, and the scraper contract in `scrapers/base.py`. `SCRAPERS` in `scrapers/__init__.py` is still empty.
-- Next: task 8 (scrapers for jobsnepal, F1Soft, Leapfrog + the `--dry-run` CLI). Show its detailed plan and wait for approval.
+- Task 8 done: scrapers in `scrapers/{jobsnepal,f1soft,leapfrog}.py`, CLI `python -m lakshya_scraper run <slug> [--dry-run] [--limit N]`, trimmed fixtures in `scraper/tests/fixtures/`. First real runs saved jobs from all 3 sources into the dev database; second runs proved dedup (listing pages only).
+- Dev database after the first runs: 126 jobs (jobsnepal 106, F1Soft 15, Leapfrog 5), 91 companies, all 3 sources healthy.
+- Known stale rows: a few jobs were saved before later cleaning fixes and still hold old values (Leapfrog "Staff Manager" experience 2–3 instead of 5+, F1Soft "Full Stack Developer" and one "three years" jobsnepal posting without experience, one location "Other - Specify"). Their raw text is in `job_sources.raw`. A `reclean` command has been proposed but not yet approved.
+- Next: task 9 (Celery + Beat). Show its detailed plan and wait for approval.
 - My shell runs on the user's machine in the same folder, so run checks directly instead of asking the user to paste output. Use `docker compose exec -T` (without `-T`, psql opens a pager and the output disappears).
 - GitHub: https://github.com/Shubham-0102/Lakshya (remote `origin`). Push only when the user asks. Push with `git -c credential.helper='!gh auth git-credential' push`; there is no global credential helper.
 - Update this section whenever a task or phase is completed.
@@ -40,6 +43,8 @@ uv run alembic upgrade head                        # apply migrations to the dev
 uv run alembic revision --autogenerate --rev-id 0002 -m "..."   # new migration (review it by hand)
 uv run python -m lakshya_scraper.sync_sources      # load scraper/sources.yaml into the sources table
 uv run pytest                                      # tests (need docker compose up)
+uv run python -m lakshya_scraper run <slug> --dry-run --limit 3   # live fetch + clean, saves nothing
+uv run python -m lakshya_scraper run <slug>        # real run (jobsnepal ≈ 15 min at 5 s/request)
 uv run ruff check . && uv run ruff format --check . # lint + format check (CI runs the same)
 uv run uvicorn lakshya_backend.main:app --reload   # API, GET /health
 uv add --package lakshya-backend <dep>             # add a dependency to one package
@@ -56,6 +61,9 @@ cd frontend && npm run dev                         # Next.js 16 (untouched until
 - Put `title`/`location` on `ListingItem` when the listing shows them, so tenders and on-site jobs outside Nepal are skipped without a request.
 - Health: a run with a `problem` (zero jobs, listing failed, most job pages failed, 403/429) → `degraded`, then `failing` after 3 runs in a row. Hitting the request limit is not a problem.
 - Chromium for Playwright: `uv run playwright install chromium`.
+- Prefer structured data in this order: JSON-LD (Leapfrog), microdata `itemprop` (JobsNepal), labelled fields (F1Soft), then CSS layout.
+- Fixtures are trimmed by hand to the markup a scraper reads (copyrighted pages, public repo). Never commit recruiter names, emails or phone numbers.
+- Check new cleaning or scraping rules against real data: dry-run the source, then audit what was stored (e.g. every `raw->>'experience'` vs `parse_experience`).
 
 ## Database conventions
 

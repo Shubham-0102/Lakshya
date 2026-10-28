@@ -32,6 +32,8 @@ from lakshya_scraper.cleaning.locations import clean_location, is_known_place
         ("Kathmandu (Hybrid/Remote)", "Kathmandu", True, False),
         ("Remote (USA)", "Remote (USA)", True, True),
         ("Remote, Nepal", "Nepal", True, False),
+        ("Other - Specify, Nepal", "Nepal", False, False),  # real, jobsnepal form placeholder
+        ("Other - Specify", None, False, False),
     ],
 )
 def test_clean_location(text, name, is_remote, outside_nepal):

@@ -40,6 +40,7 @@ def years(value):
         # Freshers
         ("Fresher", 0, 0),
         ("Fresh Graduate", 0, 0),  # real, jobsnepal
+        ("At least three years of experience in delivering vocational training", 3, None),  # real
         ("Freshers can also apply", 0, 0),
         ("No experience required", 0, 0),
         ("Fresher or 1-2 years", 0, 2),

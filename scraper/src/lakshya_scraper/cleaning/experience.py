@@ -3,7 +3,7 @@
 import re
 from decimal import Decimal
 
-from lakshya_scraper.cleaning.text import ascii_digits
+from lakshya_scraper.cleaning.text import ascii_digits, number_words_to_digits
 
 _NUMBER = r"(\d+(?:\.\d+)?)"
 _UNIT = r"(years?|yrs?|months?)"
@@ -22,7 +22,7 @@ Years = Decimal | None
 
 
 def parse_experience(text: str) -> tuple[Years, Years]:
-    text = ascii_digits(text.lower())
+    text = number_words_to_digits(ascii_digits(text.lower()))
     fresher = bool(_FRESHER.search(text))
 
     # The requirement stated first is the main one: in "5+ years of experience with 2-3 years
