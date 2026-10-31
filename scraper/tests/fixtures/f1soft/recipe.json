@@ -1,0 +1,18 @@
+{
+  "listing": {
+    "item": "div.features-job",
+    "link": "h3 a[href]",
+    "title": "h3 a[href]",
+    "location": ".location-div .small",
+    "next_page": "a[rel=next][href]",
+    "job_id": "last_path_segment"
+  },
+  "job": {
+    "title": [{"css": "h2.fs-4"}],
+    "company": [{"label": "Organization Name"}],
+    "location": [{"label": "Location"}],
+    "salary": [{"label": "Salary"}],
+    "deadline": [{"label": "Application Deadline"}],
+    "description": [{"css": "div.job-content"}]
+  }
+}

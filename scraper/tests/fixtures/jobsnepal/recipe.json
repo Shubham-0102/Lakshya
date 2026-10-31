@@ -1,0 +1,23 @@
+{
+  "listing": {
+    "item": "div.card-body",
+    "link": "h2.job-title a[href]",
+    "title": "h2.job-title a[href]",
+    "location": "i.icon-location4 + div",
+    "next_page": "a[rel=next][href]",
+    "job_id": "trailing_number"
+  },
+  "job": {
+    "title": [{"css": "[itemtype*='schema.org/JobPosting'] [itemprop='title']"}],
+    "company": [
+      {"css": "[itemprop='hiringOrganization'] [itemprop='name']"}
+    ],
+    "location": [{"css": "[itemprop='addressLocality']"}],
+    "country": [{"css": "[itemprop='addressCountry']"}],
+    "salary": [{"css": "[itemtype*='schema.org/JobPosting'] [itemprop='baseSalary']"}],
+    "experience": [{"css": "[itemprop='experienceRequirements']"}],
+    "deadline": [{"css": "span.apply-deadline"}, {"css": "[itemprop='validThrough']"}],
+    "posted": [{"css": "span.job-posted-on"}, {"css": "[itemprop='datePosted']"}],
+    "description": [{"css": "#div-job-details [itemprop='description']"}]
+  }
+}

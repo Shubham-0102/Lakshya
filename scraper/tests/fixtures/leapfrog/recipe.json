@@ -1,0 +1,19 @@
+{
+  "listing": {
+    "item": "div.vaccancy__infos",
+    "link": "a[href*='/o/']",
+    "title": "h3",
+    "location": "p",
+    "job_id": "last_path_segment",
+    "wait_for": "div.vaccancy__infos a[href*='/o/']"
+  },
+  "job": {
+    "title": [{"json_ld": "title"}],
+    "company": [{"json_ld": "hiringOrganization.name"}],
+    "location": [{"json_ld": "jobLocation.address.addressLocality"}],
+    "country": [{"json_ld": "jobLocation.address.addressCountry"}],
+    "deadline": [{"json_ld": "validThrough"}],
+    "posted": [{"json_ld": "datePosted"}],
+    "description": [{"json_ld": "description"}]
+  }
+}
