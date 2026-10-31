@@ -120,8 +120,9 @@ def preview_source(slug: str, limit: int = 3) -> Iterator[Preview]:
         for item in [item for item in items if worth_opening(item)][:limit]:
             preview = Preview(item)
             try:
-                html = fetcher.fetch(item.url, wait_for=scraper.detail_wait_for)
-                preview.raw = scraper.parse_detail(html, item)
+                preview.raw = item.raw or scraper.parse_detail(
+                    fetcher.fetch(item.url, wait_for=scraper.detail_wait_for), item
+                )
                 preview.job = clean(preview.raw)
             except StopRun:
                 raise
@@ -224,7 +225,11 @@ def collect_listing(
         # `visited` stops a loop if a "next" link ever points back to an earlier page
         while url and url not in visited:
             visited.add(url)
-            page = scraper.parse_listing(fetcher.fetch(url, wait_for=scraper.listing_wait_for), url)
+            if scraper.is_feed:
+                content = fetcher.fetch_text(url)
+            else:
+                content = fetcher.fetch(url, wait_for=scraper.listing_wait_for)
+            page = scraper.parse_listing(content, url)
             result.listing_pages += 1
             for item in page.items:
                 items.setdefault(item.external_id, item)
@@ -261,17 +266,19 @@ def _process(
     session: Session, source: Source, scraper: Scraper, fetcher: PoliteFetcher, item: ListingItem
 ) -> Outcome:
     """Fetch, read, clean and save one new posting. StopRun errors are left to the caller."""
-    try:
-        html = fetcher.fetch(item.url, wait_for=scraper.detail_wait_for)
-    except RobotsDisallowed:
-        logger.info("%s: robots.txt disallows %s", source.slug, item.url)
-        return "skipped"
-    except FetchError as error:
-        logger.warning("%s: %s", source.slug, error)
-        return "failed"
+    html = None
+    if item.raw is None:  # a feed already gave us the whole job
+        try:
+            html = fetcher.fetch(item.url, wait_for=scraper.detail_wait_for)
+        except RobotsDisallowed:
+            logger.info("%s: robots.txt disallows %s", source.slug, item.url)
+            return "skipped"
+        except FetchError as error:
+            logger.warning("%s: %s", source.slug, error)
+            return "failed"
 
     try:
-        raw = scraper.parse_detail(html, item)
+        raw = item.raw or scraper.parse_detail(html, item)
         job = clean(raw)
     except Exception:  # a page layout the scraper doesn't understand
         logger.exception("%s: could not read job page %s", source.slug, item.url)

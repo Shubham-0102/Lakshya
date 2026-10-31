@@ -20,7 +20,7 @@ from lakshya_backend.db.models import (
 from lakshya_scraper.fetching import FetchError, PageLimitReached, RobotsDisallowed, SiteAskedToStop
 from lakshya_scraper.job_format import RawJob
 from lakshya_scraper.pipeline import RunResult, SourceNotAllowed, collect_listing, scrape
-from lakshya_scraper.scrapers import ListingItem, ListingPage, Scraper
+from lakshya_scraper.scrapers import FeedScraper, ListingItem, ListingPage, Scraper
 
 BASE = "https://jobs.example.com"
 FIRST_PAGE = f"{BASE}/jobs?page=1"
@@ -303,3 +303,96 @@ def test_collect_listing_can_stop_after_the_first_page():
 
     assert [item.external_id for item in items] == ["1"]
     assert fetcher.fetched == [FIRST_PAGE]
+
+
+class FakeFeed(FeedScraper):
+    slug = "example"
+
+    def first_listing_url(self) -> str:
+        return FIRST_PAGE
+
+    def parse_listing(self, html: str, url: str) -> ListingPage:
+        return ListingPage(self.items(json.loads(html)))
+
+    def parse_entry(self, entry: dict) -> RawJob | None:
+        if entry.get("only_in") == "USA":
+            return None
+        return RawJob(
+            source_slug=self.slug,
+            external_id=entry["id"],
+            url=f"{BASE}/jobs/{entry['id']}",
+            title=entry["title"],
+            company="Acme",
+            location="Remote",
+        )
+
+
+class FeedFetcher(FakeFetcher):
+    """A feed must come through fetch_text; opening a page would be a wasted request."""
+
+    def fetch(self, url: str, wait_for: str | None = None) -> str:
+        pytest.fail(f"a feed must not open pages, got {url}")
+
+    def fetch_text(self, url: str) -> str:
+        return super().fetch(url)
+
+
+def feed(*entries: dict) -> dict[str, str | Exception]:
+    return {FIRST_PAGE: json.dumps(list(entries))}
+
+
+def test_feed_jobs_are_saved_without_opening_any_page(db_session, source):
+    fetcher = FeedFetcher(feed({"id": "1", "title": "Engineer"}, {"id": "2", "title": "Tester"}))
+
+    result = scrape(db_session, source, FakeFeed(), fetcher)
+
+    assert (result.found, result.new, result.failed) == (2, 2, 0)
+    assert fetcher.fetched == [FIRST_PAGE]
+    assert result.problem is None
+
+
+def test_second_feed_run_creates_no_duplicates(db_session, source):
+    pages = feed({"id": "1", "title": "Engineer"})
+
+    scrape(db_session, source, FakeFeed(), FeedFetcher(pages))
+    result = scrape(db_session, source, FakeFeed(), FeedFetcher(pages))
+
+    assert (result.seen_again, result.new) == (1, 0)
+    assert db_session.scalar(select(func.count()).select_from(Job)) == 1
+
+
+def test_one_unreadable_feed_entry_does_not_lose_the_page(db_session, source):
+    fetcher = FeedFetcher(feed({"id": "1"}, {"id": "2", "title": "Tester"}))  # "1" has no title
+
+    result = scrape(db_session, source, FakeFeed(), fetcher)
+
+    assert (result.found, result.new) == (1, 1)
+
+
+def test_feed_entries_nepal_cannot_take_are_left_out(db_session, source):
+    fetcher = FeedFetcher(
+        feed({"id": "1", "title": "Engineer", "only_in": "USA"}, {"id": "2", "title": "Tester"})
+    )
+
+    result = scrape(db_session, source, FakeFeed(), fetcher)
+
+    assert (result.found, result.new) == (1, 1)
+
+
+def test_empty_feed_is_a_problem_like_an_empty_listing(db_session, source):
+    result = scrape(db_session, source, FakeFeed(), FeedFetcher(feed()))
+
+    assert result.problem is not None
+    assert source.health_status == HealthStatus.DEGRADED
+
+
+def test_feed_that_asks_us_to_stop_counts_as_a_problem(db_session, source):
+    result = scrape(
+        db_session,
+        source,
+        FakeFeed(),
+        FeedFetcher({FIRST_PAGE: SiteAskedToStop("jobs.example.com answered 429")}),
+    )
+
+    assert result.problem
+    assert result.stopped_early

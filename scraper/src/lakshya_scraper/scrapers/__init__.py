@@ -1,6 +1,6 @@
 """One scraper per approved source; each turns its site's pages into RawJobs."""
 
-from lakshya_scraper.scrapers.base import ListingItem, ListingPage, Scraper
+from lakshya_scraper.scrapers.base import FeedScraper, ListingItem, ListingPage, Scraper
 from lakshya_scraper.scrapers.f1soft import F1SoftScraper
 from lakshya_scraper.scrapers.jobsnepal import JobsNepalScraper
 from lakshya_scraper.scrapers.leapfrog import LeapfrogScraper
@@ -19,4 +19,4 @@ def get_scraper(slug: str) -> Scraper:
     return SCRAPERS[slug]()
 
 
-__all__ = ["SCRAPERS", "ListingItem", "ListingPage", "Scraper", "get_scraper"]
+__all__ = ["SCRAPERS", "FeedScraper", "ListingItem", "ListingPage", "Scraper", "get_scraper"]

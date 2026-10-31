@@ -82,6 +82,28 @@ class PoliteFetcher:
     def fetch(self, url: str, wait_for: str | None = None) -> str:
         """Return the page's HTML after JavaScript ran. `wait_for`: a CSS selector that must
         appear first (for pages that build their content with JavaScript)."""
+
+        def open_page() -> int | None:
+            response = self._page.goto(url, wait_until="domcontentloaded", timeout=self._timeout_ms)
+            return response.status if response else None
+
+        self._request(url, open_page)
+        return self._content(url, wait_for)
+
+    def fetch_text(self, url: str) -> str:
+        """Return a response body as it is, for feeds and APIs: nothing to render, so no page."""
+        responses = []
+
+        def get() -> int:
+            responses.append(self._context.request.get(url, timeout=self._timeout_ms))
+            return responses[-1].status
+
+        self._request(url, get)
+        return responses[-1].text()
+
+    def _request(self, url: str, send: Callable[[], int | None]) -> None:
+        """The rules for every request: robots.txt, the throttle, retries, and stopping when
+        the site says so. Returns once `send` got a good answer."""
         robots = self._robots_for(url)
         if not robots.allows(url):
             raise RobotsDisallowed(f"robots.txt disallows {url}")
@@ -91,10 +113,7 @@ class PoliteFetcher:
             self._take_turn(delay)
             started = time.monotonic()
             try:
-                response = self._page.goto(
-                    url, wait_until="domcontentloaded", timeout=self._timeout_ms
-                )
-                status = response.status if response else None
+                status = send()
             except PlaywrightError as error:  # timeout, connection refused, DNS, ...
                 logger.warning("fetch %s failed: %s", url, error.message.splitlines()[0])
                 status = None
@@ -105,7 +124,7 @@ class PoliteFetcher:
             if status in (403, 429):
                 raise SiteAskedToStop(f"{urlsplit(url).netloc} answered {status}")
             if status is not None and status < 400:
-                return self._content(url, wait_for)
+                return
             if status is not None and status < 500:
                 raise FetchError(
                     f"{url} answered {status}"

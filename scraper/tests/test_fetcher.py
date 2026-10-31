@@ -272,3 +272,68 @@ def test_missing_expected_element_is_a_fetch_error(site, make_fetcher):
         pytest.raises(FetchError, match="never appeared"),
     ):
         fetcher.fetch(f"{site.base_url}/careers", wait_for="li.job")
+
+
+def test_fetch_text_returns_the_body_exactly_as_sent(site, make_fetcher):
+    body = '{"jobs": [{"title": "Engineer & Tester", "city": "Pokhara – पोखरा"}]}'
+    site.add("/robots.txt", (200, ALLOW_EVERYTHING))
+    site.add("/api", (200, body))
+
+    with make_fetcher() as fetcher:
+        assert fetcher.fetch_text(f"{site.base_url}/api") == body
+
+    assert site.paths()[:2] == ["/robots.txt", "/api"]
+    assert {user_agent for _, user_agent, _ in site.requests} == {UA}
+
+
+def test_fetch_text_never_requests_what_robots_disallows(site, make_fetcher):
+    site.add("/robots.txt", (200, "User-agent: *\nDisallow: /api\n"))
+    site.add("/api", (200, "{}"))
+
+    with make_fetcher() as fetcher, pytest.raises(RobotsDisallowed):
+        fetcher.fetch_text(f"{site.base_url}/api")
+
+    assert "/api" not in site.paths()
+
+
+@pytest.mark.parametrize("status", [403, 429])
+def test_fetch_text_stops_when_the_site_asks(site, make_fetcher, status):
+    site.add("/robots.txt", (200, ALLOW_EVERYTHING))
+    site.add("/api", (status, ""))
+
+    with make_fetcher() as fetcher, pytest.raises(SiteAskedToStop):
+        fetcher.fetch_text(f"{site.base_url}/api")
+
+    assert site.paths().count("/api") == 1
+
+
+def test_fetch_text_retries_a_server_error(site, make_fetcher):
+    site.add("/robots.txt", (200, ALLOW_EVERYTHING))
+    site.add("/api", (503, ""), (200, "{}"))
+
+    with make_fetcher() as fetcher:
+        assert fetcher.fetch_text(f"{site.base_url}/api") == "{}"
+
+    assert site.paths().count("/api") == 2
+
+
+def test_fetch_text_waits_its_turn_like_any_request(site, make_fetcher):
+    site.add("/robots.txt", (200, ALLOW_EVERYTHING))
+    site.add("/a", (200, "{}"))
+    site.add("/b", (200, "{}"))
+
+    with make_fetcher(min_delay=0.2) as fetcher:
+        fetcher.fetch_text(f"{site.base_url}/a")
+        fetcher.fetch_text(f"{site.base_url}/b")
+
+    assert site.times("/b")[0] - site.times("/a")[0] >= 0.15
+
+
+def test_fetch_text_counts_towards_the_request_limit(site, make_fetcher):
+    site.add("/robots.txt", (200, ALLOW_EVERYTHING))
+    site.add("/a", (200, "{}"))
+
+    with make_fetcher(max_requests=2) as fetcher:
+        fetcher.fetch_text(f"{site.base_url}/a")
+        with pytest.raises(PageLimitReached):
+            fetcher.fetch_text(f"{site.base_url}/a")
