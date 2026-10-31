@@ -32,8 +32,9 @@ docker compose ps -a
 That is all scheduled scraping needs: jobs are collected at 06:00 and 18:00 Nepal time for as long as the containers are running. The first build takes a few minutes because it installs Chromium.
 
 ```bash
-# 3. Python packages, for tests and the commands below
+# 3. Python packages and a headless browser, for tests and the commands below
 uv sync
+uv run playwright install chromium            # once (on Linux, add --with-deps if system libraries are missing)
 uv run pytest                                 # tests use the separate lakshya_test database
 
 # 4. API (leave running in its own terminal)
@@ -67,7 +68,6 @@ docker compose up -d --build worker beat      # after changing scraper code
 ### Scrape by hand
 
 ```bash
-uv run playwright install chromium                            # once: the headless browser
 uv run python -m lakshya_scraper run jobsnepal --dry-run --limit 3   # fetch + clean 3 jobs, save nothing
 uv run python -m lakshya_scraper run jobsnepal                # real run: saves new jobs
 ```
