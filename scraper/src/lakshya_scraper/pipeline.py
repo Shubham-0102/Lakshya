@@ -39,12 +39,19 @@ from lakshya_scraper.storage import known_external_ids, mark_seen, save_job
 logger = logging.getLogger(__name__)
 
 FAILING_AFTER = 3  # runs in a row with a problem before a source counts as failing
+# Expires by itself if a run dies without releasing it. Must outlive the time limit in tasks.py,
+# so a run that is still going can't lose its lock.
+LOCK_TIMEOUT_SECONDS = 60 * 60
 
 Outcome = Literal["new", "skipped", "failed"]
 
 
 class SourceNotAllowed(Exception):
     """The source is not enabled and approved in sources.yaml."""
+
+
+class SourceBusy(Exception):
+    """Another run of this source is still going."""
 
 
 @dataclass
@@ -71,14 +78,35 @@ class Preview:
 
 
 def run_source(slug: str, limit: int | None = None) -> RunResult:
-    """Scrape one source and save new jobs. `limit`: open at most this many job pages."""
+    """Scrape one source and save new jobs. `limit`: open at most this many job pages.
+
+    Raises SourceBusy if the source is already being scraped.
+    """
     scraper = get_scraper(slug)
-    with get_session() as session:
-        source = _load_allowed_source(session, slug)
-        with open_fetcher(slug, source.crawl_delay_seconds) as fetcher:
-            result = scrape(session, source, scraper, fetcher, limit=limit)
+    with Redis.from_url(get_settings().redis_url) as redis, source_lock(redis, slug):
+        with get_session() as session:
+            source = _load_allowed_source(session, slug)
+            with open_fetcher(slug, source.crawl_delay_seconds) as fetcher:
+                result = scrape(session, source, scraper, fetcher, limit=limit)
     logger.info("run finished: %s", result)
     return result
+
+
+@contextmanager
+def source_lock(redis: Redis, slug: str) -> Iterator[None]:
+    """Only one run per source at a time, across every worker and the command line."""
+    lock = redis.lock(
+        f"lock:source:{slug}",
+        timeout=LOCK_TIMEOUT_SECONDS,
+        blocking=False,
+        raise_on_release_error=False,  # a lock that already expired must not hide the result
+    )
+    if not lock.acquire():
+        raise SourceBusy(f"{slug} is already being scraped")
+    try:
+        yield
+    finally:
+        lock.release()
 
 
 def preview_source(slug: str, limit: int = 3) -> Iterator[Preview]:

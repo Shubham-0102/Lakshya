@@ -9,9 +9,10 @@ Logs go to stderr and results to stdout, so the output can be piped (e.g. into j
 import argparse
 import json
 import logging
+import sys
 from dataclasses import asdict
 
-from lakshya_scraper.pipeline import preview_source, run_source
+from lakshya_scraper.pipeline import SourceBusy, preview_source, run_source
 from lakshya_scraper.scrapers import SCRAPERS
 
 _DESCRIPTION_PREVIEW = 300  # characters of the description to print in a dry run
@@ -35,7 +36,11 @@ def main(argv: list[str] | None = None) -> int:
             print(json.dumps(_preview_as_dict(preview), indent=2, ensure_ascii=False))
         return 0
 
-    result = run_source(args.slug, limit=args.limit)
+    try:
+        result = run_source(args.slug, limit=args.limit)
+    except SourceBusy as busy:
+        print(busy, file=sys.stderr)
+        return 1
     print(json.dumps(asdict(result), indent=2))
     return 0 if result.problem is None else 1  # non-zero tells a scheduler something is wrong
 

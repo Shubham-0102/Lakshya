@@ -4,7 +4,7 @@ import pytest
 
 from lakshya_scraper import __main__ as cli
 from lakshya_scraper.job_format import RawJob
-from lakshya_scraper.pipeline import Preview, RunResult
+from lakshya_scraper.pipeline import Preview, RunResult, SourceBusy
 from lakshya_scraper.scrapers import ListingItem
 
 ITEM = ListingItem("42", "https://jobs.example.com/jobs/42")
@@ -42,6 +42,16 @@ def test_dry_run_prints_raw_and_clean_jobs_and_saves_nothing(monkeypatch, capsys
     assert printed["raw"]["title"] == "Backend Engineer"
     assert len(printed["raw"]["description"]) == 300  # shortened for reading
     assert printed["clean"]["normalized_title"] == "backend engineer"
+
+
+def test_real_run_stops_with_a_message_when_the_source_is_busy(monkeypatch, capsys):
+    def busy(slug, limit):
+        raise SourceBusy(f"{slug} is already being scraped")
+
+    monkeypatch.setattr(cli, "run_source", busy)
+
+    assert cli.main(["run", "example"]) == 1
+    assert "already being scraped" in capsys.readouterr().err
 
 
 def test_real_run_exits_non_zero_when_the_source_has_a_problem(monkeypatch, capsys):
