@@ -56,7 +56,8 @@ def clean_title(title: str) -> str:
 def normalize_title(title: str) -> str:
     """Lowercase words only, for comparing titles: "Full-Stack Dev." -> "full stack dev"."""
     text = title.lower().replace("&", " and ")
-    return squash(re.sub(r"[^0-9a-zऀ-ॿ]+", " ", text))  # keeps Devanagari
+    # \w keeps letters in any script; the Devanagari range also keeps its vowel signs
+    return squash(re.sub(r"[^\wऀ-ॿ]+|_", " ", text))
 
 
 def _fix_all_caps(title: str) -> str:
@@ -77,12 +78,16 @@ def _fix_all_caps(title: str) -> str:
 
 # Short codes are matched in capitals only, so "join us only if..." isn't read as "US only"
 _ELSEWHERE = (
-    r"(?:(?-i:US|USA|UK|EU|EMEA|LATAM)|u\.s\.(?:a\.)?|u\.k\.|united states|canada|europe|australia)"
+    r"(?:(?-i:US|USA|UK|EU|EMEA|LATAM)|u\.s\.(?:a\.)?|u\.k\."
+    r"|united states|canada|europe|australia)"
 )
-# Who can apply, when only the title says so: "Web Developer (U.S. Based)", "Sales, US Only"
+_COUNTRY_AT_END = r"(?:germany|france|spain|poland|india|brazil|mexico|philippines)"
+# Who can apply, when only the title says so: "Web Developer (U.S. Based)", "Sales, US Only",
+# or a place at the very end: "Account Manager LATAM", "B2B Marketing - India"
 _LIMITED_ELSEWHERE = re.compile(
     rf"\b{_ELSEWHERE}(?:\s*[-–]\s*|\s+)(?:only|based|residents?|citizens?)\b"
-    rf"|\b(?:based|located|residing) in (?:the )?{_ELSEWHERE}(?![\w.])",
+    rf"|\b(?:based|located|residing) in (?:the )?{_ELSEWHERE}(?![\w.])"
+    rf"|\b(?:{_ELSEWHERE}|{_COUNTRY_AT_END})\)?\s*$",
     re.IGNORECASE,
 )
 

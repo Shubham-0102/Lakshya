@@ -91,6 +91,10 @@ def test_normalize_title(title, expected):
         "Engineer based in the United States",
         "Recruiter based in Canada",
         "Field Engineer EMEA-based",
+        "Senior Software Engineer LATAM",  # real, Remote OK
+        "B2B Marketing - India",  # real, Remote OK
+        "Go-To-Market Lead (Germany)",  # real, Remote OK
+        "Country Manager Canada",  # real, Remote OK
     ],
 )
 def test_title_limits_the_job_to_elsewhere(title):
@@ -101,7 +105,7 @@ def test_title_limits_the_job_to_elsewhere(title):
     "title",
     [
         "Backend Engineer",
-        "Country Manager Canada",  # names a market, doesn't say who can apply
+        "Director US Tax & Accounting",  # real: the subject, not who can apply
         "Join us only if you love Python",
         "Software Engineer, Trust and Safety",
         "Customer Support (Asia Based)",
@@ -111,3 +115,16 @@ def test_title_limits_the_job_to_elsewhere(title):
 )
 def test_title_does_not_limit_the_job(title):
     assert not limited_to_elsewhere(title)
+
+
+@pytest.mark.parametrize(
+    ("title", "expected"),
+    [
+        ("مدير المشروع", "مدير المشروع"),  # real shape: a title with no Latin letters
+        ("Développeur Web", "développeur web"),
+        ("नेपाली अनुवादक", "नेपाली अनुवादक"),
+        ("Full-Stack Dev.", "full stack dev"),
+    ],
+)
+def test_normalize_title_keeps_letters_of_any_script(title, expected):
+    assert normalize_title(title) == expected

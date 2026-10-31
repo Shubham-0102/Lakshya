@@ -126,16 +126,18 @@ Checked on 2026-10-31, about 100 requests in total, through `PoliteFetcher` (rob
 
 | Source | What its own pages say | Size | Verdict |
 | --- | --- | --- | --- |
-| **Himalayas** | Docs: "You can show the jobs on your own job board, site or app without asking us first." Terms clause 30A exempts the public API and feeds from the ban on automated access | 1,285 jobs for `country=Nepal`; 19 of the 20 sampled have no location limit | ✅ **Allowed, with conditions** |
+| **Himalayas** | Docs: "You can show the jobs on your own job board, site or app without asking us first." Terms clause 30A exempts the public API and feeds from the ban on automated access | Reports 1,285 jobs for `country=Nepal`, but only the first 20 of any search can be read (see below) | ✅ **Allowed, with conditions** |
 | **Remote OK** | API terms in the feed's first element: link back and name Remote OK, or access is suspended | 99 newest jobs; 66 look usable from Nepal | ✅ **Allowed, with conditions** |
 | **Jobicy** | Fair use: "You may use Jobicy listings in your own products and user experiences without requesting individual permission." Most integrations need no agreement | Not measured | ✅ **Allowed, with conditions** |
 | **Arbeitnow** | Terms section 11 covers the API: link back; permission can be revoked. API note: "This is a free public API for jobs, please do not abuse." | 300 on page 1, only 12 remote and mostly German | ✅ **Allowed, low value** |
 | **We Work Remotely** | "Anyone can use the feed, all we ask is that you attribute the links back" | Not measured | ⚠️ **Unconfirmed:** a category page answered 403 and the terms weren't read |
 | **ReliefWeb** | "Anyone can use the ReliefWeb API", but every call now needs a pre-approved `appname`, and `api.reliefweb.int/robots.txt` is `Disallow: /`, so `PoliteFetcher` refuses it | Not measured | ⏸️ **Pending:** needs an approved appname, requested by the project owner |
 | **Remotive** | The API page welcomes developers, but the Terms of Use forbid automated access "without our written permission" and making listings available to any third party | Not measured | ❌ **Blocked:** the stricter text wins; ask for permission |
+| The Muse | API terms forbid replicating its services and cloning its content, and the API needs a registered app | Not measured | ❌ **Blocked** |
+| Working Nomads | Terms forbid using the service "to build a competitive product or service"; no public feed offered | Not measured | ❌ **Blocked** |
 
 **Conditions we must keep:**
-- **Himalayas:** every Apply action uses the API's `applicationLink`, never a direct employer link. Show visible credit and a link to himalayas.app. Do not pass the jobs on, including through feeds or `JobPosting` structured data. Re-read the feed daily and stop showing jobs that left it. Its docs recommend a free API key for anything beyond a quick test.
+- **Himalayas:** every Apply action uses the API's `applicationLink`, never a direct employer link. Show visible credit and a link to himalayas.app. Do not pass the jobs on, including through feeds or `JobPosting` structured data. Its docs recommend a free API key for anything beyond a quick test. They also say to re-read the feed daily and drop jobs that left it, or check a job with the single-job endpoint before showing it. We can't see the whole feed, so the web app must use that endpoint (Phase 4).
 - **Remote OK:** a normal link back to the job on Remote OK, without `nofollow`, naming Remote OK as the source. Don't use its logo.
 - **Jobicy:** credit Jobicy, keep the Jobicy listing URL, never present its jobs as our own, and poll at most once an hour.
 - **Arbeitnow:** a link back to Arbeitnow.com on our platform.
@@ -157,7 +159,10 @@ Checked on 2026-10-31, about 100 requests in total, through `PoliteFetcher` (rob
 | EB Pearls | Homepage disallowed | Not read | Not read | ❌ **Blocked** by robots.txt |
 | Logpoint, Ncell | Not applicable | Not read | The guessed careers URL returned 404 or nothing useful | Not sources for now |
 
+**Himalayas' robots.txt conflicts with its own docs.** The docs page through search results with `page=2`, but robots.txt has `Disallow: /jobs*&page=` and `Disallow: /jobs/*?page=`, which cover the API. The stricter one wins, so we never send `page=`, and we don't use the deprecated `offset` either, which would only be a way around the same rule. We run about 40 searches by kind of job, up to 20 results each, once a day. Each search is allowed by robots.txt, and the docs recommend search over walking the feed. If Himalayas confirms that `page=` is fine for API users (hi@himalayas.app), the 1,285 jobs become reachable.
+
 **Mistakes to learn from:**
+- The first review counted 1,285 Himalayas jobs as reachable without testing the next page against robots.txt. `PoliteFetcher` caught it on the first dry run.
 - The review's link-following matched "api" and opened the Arbeitnow and Remote OK feeds, and a few job pages on Arbeitnow, Remotive and Jobicy, before their terms had been read. Terms must come first. The later career-page pass only followed links to terms and careers pages.
 - Jobicy answered 429 and We Work Remotely answered 403 during this review, even at 5 seconds per request. The fetcher stopped at once, and neither site was contacted again that day.
 - Third-party listings were wrong about Himalayas (they implied it couldn't be used) and unclear about Remotive. Only a site's own pages count.

@@ -72,9 +72,9 @@ uv run python -m lakshya_scraper run jobsnepal --dry-run --limit 3   # fetch + c
 uv run python -m lakshya_scraper run jobsnepal                # real run: saves new jobs
 ```
 
-Sources: `jobsnepal`, `f1soft`, `leapfrog` (see `docs/sources.md` for why these three). Every request
+Sources: `jobsnepal`, `f1soft`, `leapfrog`, and the feeds `himalayas`, `remoteok`, `jobicy`, `arbeitnow` (see `docs/sources.md` for why these and what each one requires). Every request
 checks robots.txt, waits at least 5 seconds per site, and identifies itself as `Lakshya/0.1`. A second
-run only reads the listing pages: jobs already stored are not fetched again. If a scheduled run of that source is in progress, the command stops with "already being scraped".
+run only reads the listing pages: jobs already stored are not fetched again. Feeds carry whole jobs, so they never open job pages. If a scheduled run of that source is in progress, the command stops with "already being scraped".
 
 ### Re-clean stored jobs
 
@@ -85,7 +85,7 @@ uv run python -m lakshya_scraper reclean --dry-run   # show what would change, s
 uv run python -m lakshya_scraper reclean             # apply it
 ```
 
-Jobs that cleaning would now skip are listed, not deleted.
+Jobs that cleaning would now skip are listed. Those from feeds are removed, because feeds are re-read anyway; those from pages stay, because removing them would make every run fetch those pages again.
 
 Postgres and Redis use ports 5433 and 6380, not the defaults, so they don't clash with a Postgres or Redis already installed on your machine. Change them in `.env`.
 

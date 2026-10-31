@@ -16,13 +16,20 @@ _FRESHER = re.compile(
     r"\bfreshers?\b|\bfresh graduates?\b|\bno (prior |previous )?experience\b|\bentry[- ]level\b"
     r"|\bexperience (is )?not required\b"
 )
-_MAX_YEARS = 50  # anything bigger is a misread, not a requirement
+_MAX_YEARS = 20  # anything bigger is a misread (usually the employer's age), not a requirement
 # Longer than this is a sentence, not a field like "2+ years". A sentence can mention years that
 # aren't a requirement ("It is two years of supervised programme"), so there they only count
-# with the word "experience" after them or a word like "minimum" before them.
+# with the word "experience" near them or a word like "minimum" before them.
 _LONG_TEXT = 60
 _EXPERIENCE_FOLLOWS = re.compile(r"[^.;]*\bexperience\b")
+_EXPERIENCE_BEFORE = re.compile(r"\bexperience\b[^.;]{0,25}$")  # "Strong experience (7+ years)"
 _AT_LEAST = re.compile(r"(min(imum)?( of)?|at\s*least)\s*$")
+# The employer's history, not a requirement: "a Barcelona-based company with over 15 years of
+# experience", "With more than 35 years of experience in Nepal, the charity supports..."
+_ABOUT_THE_EMPLOYER = re.compile(
+    r"\b(compan(y|ies)|organi[sz]ation|firm|agency|group|provider)\b[^.;]{0,40}\bwith\b"
+    r"|^\s*with (more than|over|nearly|almost)\b"
+)
 
 Years = Decimal | None
 
@@ -61,11 +68,15 @@ def parse_experience(text: str) -> tuple[Years, Years]:
 
 
 def _is_requirement(text: str, match: re.Match) -> bool:
+    before = text[: match.start()]
+    if _ABOUT_THE_EMPLOYER.search(re.split(r"[.;]\s", before)[-1]):
+        return False
     return (
         len(text) <= _LONG_TEXT
         or match.re is _RANGE_WITHOUT_UNIT  # has "experience" in the match itself
         or bool(_EXPERIENCE_FOLLOWS.match(text, match.end()))
-        or bool(_AT_LEAST.search(text[: match.start()]))
+        or bool(_EXPERIENCE_BEFORE.search(before))
+        or bool(_AT_LEAST.search(before))
     )
 
 

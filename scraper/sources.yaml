@@ -189,3 +189,17 @@ sources:
     type: career_page
     compliance_status: blocked
     compliance_notes: "robots.txt disallows the homepage"
+
+  - slug: themuse
+    name: The Muse
+    base_url: https://www.themuse.com
+    type: feed
+    compliance_status: blocked
+    compliance_notes: API terms forbid replicating its services and cloning its content (checked 2026-10-31)
+
+  - slug: workingnomads
+    name: Working Nomads
+    base_url: https://www.workingnomads.com
+    type: feed
+    compliance_status: blocked
+    compliance_notes: terms forbid using the service to build a competitive product (checked 2026-10-31)

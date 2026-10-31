@@ -3,16 +3,20 @@
 Nothing is fetched: this only reads job_sources.raw. Relative deadlines stay correct because
 the raw record keeps the date it was scraped.
 
+A job cleaning now rejects is removed if it came from a feed: feeds are re-read on every run
+and the same rule then skips it. A job from a page stays and is reported, because removing it
+would make every later run fetch that page again.
+
 A job with several sources (Phase 2) would be overwritten by each of them in turn. In
 Phase 1 every job has exactly one.
 """
 
 from dataclasses import dataclass, field
 
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.orm import Session, joinedload
 
-from lakshya_backend.db.models import Job, JobSource
+from lakshya_backend.db.models import Job, JobSource, SourceType
 from lakshya_scraper.cleaning import clean
 from lakshya_scraper.job_format import RawJob
 from lakshya_scraper.storage import get_or_create_company, job_columns
@@ -31,9 +35,8 @@ class Change:
 class RecleanResult:
     checked: int = 0
     changed: int = 0  # jobs with at least one field changed
-    # URLs of jobs cleaning would now skip. They are reported, not deleted: without the
-    # job_sources row the next run would treat them as new and fetch them every time.
-    rejected: list[str] = field(default_factory=list)
+    rejected: list[str] = field(default_factory=list)  # URLs of jobs cleaning would now skip
+    removed: int = 0  # of those, the jobs from feeds: removed unless it's a dry run
     changes: list[Change] = field(default_factory=list)
 
 
@@ -41,7 +44,7 @@ def reclean(session: Session, dry_run: bool = False) -> RecleanResult:
     result = RecleanResult()
     postings = session.scalars(
         select(JobSource)
-        .options(joinedload(JobSource.job).joinedload(Job.company))
+        .options(joinedload(JobSource.job).joinedload(Job.company), joinedload(JobSource.source))
         .order_by(JobSource.id)
     ).all()
 
@@ -50,6 +53,9 @@ def reclean(session: Session, dry_run: bool = False) -> RecleanResult:
         cleaned = clean(RawJob.model_validate(posting.raw))
         if cleaned is None:
             result.rejected.append(posting.url)
+            if posting.source.type == SourceType.FEED:
+                session.execute(delete(Job).where(Job.id == posting.job_id))
+                result.removed += 1
             continue
 
         job = posting.job

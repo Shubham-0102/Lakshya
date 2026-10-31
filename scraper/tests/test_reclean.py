@@ -6,7 +6,14 @@ from decimal import Decimal
 import pytest
 from sqlalchemy import func, select
 
-from lakshya_backend.db.models import Company, ComplianceStatus, Job, Source, SourceType
+from lakshya_backend.db.models import (
+    Company,
+    ComplianceStatus,
+    Job,
+    JobSource,
+    Source,
+    SourceType,
+)
 from lakshya_scraper import __main__ as cli
 from lakshya_scraper.cleaning import clean
 from lakshya_scraper.job_format import RawJob
@@ -133,6 +140,31 @@ def test_a_job_cleaning_now_rejects_is_kept_and_reported(db_session, source):
 
     assert result.rejected == [str(raw.url)]
     assert result.changed == 0
+    assert db_session.scalar(select(func.count()).select_from(Job)) == 1
+
+
+def test_a_feed_job_cleaning_now_rejects_is_removed(db_session, source):
+    source.type = SourceType.FEED
+    job = save(db_session, source, raw_job())
+    job.job_sources[0].raw = raw_job(title="Call for Bid").model_dump(mode="json")
+    db_session.commit()
+
+    result = reclean(db_session)
+
+    assert (len(result.rejected), result.removed) == (1, 1)
+    assert db_session.scalar(select(func.count()).select_from(Job)) == 0
+    assert db_session.scalar(select(func.count()).select_from(JobSource)) == 0
+
+
+def test_dry_run_removes_nothing(db_session, source):
+    source.type = SourceType.FEED
+    job = save(db_session, source, raw_job())
+    job.job_sources[0].raw = raw_job(title="Call for Bid").model_dump(mode="json")
+    db_session.commit()
+
+    result = reclean(db_session, dry_run=True)
+
+    assert result.removed == 1  # reported
     assert db_session.scalar(select(func.count()).select_from(Job)) == 1
 
 

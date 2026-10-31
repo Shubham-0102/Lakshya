@@ -13,13 +13,14 @@
 ## Current status
 
 - Phase 1 (Scraping basics): done 2026-10-31. Plan and decisions: `docs/phase-1-plan.md`. Beat was proven with a temporary one-minute schedule; the first run on the real schedule (06:00 Kathmandu, 2026-11-01) still has to be confirmed in `docker compose logs beat` and `sources.last_run_at`.
-- Phase 2 (Smart scraping): plan approved 2026-10-31, see `docs/phase-2-plan.md`. Task 1 (source review) is written up in `docs/sources.md` and waits for the user's approval of the new sources; nothing new is enabled yet. Show each later task's detailed plan and wait for approval. Tasks 4 to 7 use `GEMINI_API_KEY`, which is in `.env` and works (free tier, checked 2026-10-31). Never print or read that value; check it from a script that reports only its format.
+- Phase 2 (Smart scraping): plan approved 2026-10-31, see `docs/phase-2-plan.md`. Task 1 (source review) and task 2 (feeds) are done. Next: task 3, recipe format and interpreter. Show each task's detailed plan and wait for approval. Tasks 4 to 7 use `GEMINI_API_KEY`, which is in `.env` and works (free tier, checked 2026-10-31). Never print or read that value; check it from a script that reports only its format.
 - Compliance (`docs/sources.md`): of the job portals, only jobsnepal is allowed; merojob, kumarijob, kantipurjob and ramrojob forbid scraping or reuse in their terms; hamrojob is a parked domain. Company career pages: F1Soft and Leapfrog are allowed.
-- Approved sources: jobsnepal, F1Soft careers, Leapfrog careers.
+- Approved sources: jobsnepal, F1Soft, Leapfrog, and the feeds Himalayas, Remote OK, Jobicy, Arbeitnow (all enabled); ICIMOD and Bajra (approved, waiting for recipes in task 7). That's 9; the 10th must come from We Work Remotely (check its feed and terms; it answered 403 on a page) or ReliefWeb (the user must request an appname). The Muse and Working Nomads were reviewed as replacements and are blocked. Each source's conditions of use are in `docs/sources.md`; the web app must follow them.
+- Jobicy's scraper was built from its docs and has never run on real data: check its first scheduled run (it answered 429 during the review, so it was held until 2026-11-01).
 - The user is sending permission emails to the blocked portals (template in `docs/sources.md`).
 - Approved cleaning decisions: jobs people in Nepal can't take are dropped, both on-site jobs abroad and remote jobs limited to other places (changed 2026-10-31; a remote job naming any place except Nepal, Asia or anywhere counts as limited); a salary with no currency is assumed NPR if ≥ 1,000; ambiguous numeric dates are day/month; a year ≥ 2070 means Bikram Sambat.
 - Where things live: `cleaning/` (`clean(raw) -> CleanJob | None`, one pure module per field), `fetching/` (hand-written RFC 9309 robots parser, Redis throttle, `PoliteFetcher`), `pipeline.py` (`run_source` → `scrape`), `storage.py`, `reclean.py`, `celery_app.py` (schedule), `tasks.py`, `scrapers/{jobsnepal,f1soft,leapfrog}.py`, `job_format.py` (`RawJob`, `CleanJob`), `docker/scraper/Dockerfile`.
-- Dev database on 2026-10-31: 164 jobs (jobsnepal 137, F1Soft 20, Leapfrog 7), 114 companies, all 3 sources healthy, about 13 new jobs a day.
+- Dev database on 2026-10-31: 713 jobs (Himalayas 459, jobsnepal 137, Remote OK 64, Arbeitnow 26, F1Soft 20, Leapfrog 7), all from before cross-source deduplication. Himalayas reports 1,285 jobs for Nepal, but only the first 20 of each role search are reachable (robots.txt forbids `page=`); the user could ask hi@himalayas.app whether API paging is fine.
 - Worth checking: job 69's experience text is contradictory ("2+ years , 3 to 5 years"); the parser takes the first value.
 - My shell runs on the user's machine in the same folder, so run checks directly instead of asking the user to paste output. Use `docker compose exec -T` (without `-T`, psql opens a pager and the output disappears).
 - GitHub: https://github.com/Shubham-0102/Lakshya (remote `origin`). Push only when the user asks. Push with `git -c credential.helper='!gh auth git-credential' push`; there is no global credential helper.
@@ -44,7 +45,7 @@ uv run pytest                                      # tests (need docker compose 
 uv run python -m lakshya_scraper run <slug> --dry-run --limit 3   # live fetch + clean, saves nothing
 uv run python -m lakshya_scraper run <slug>        # real run (jobsnepal ≈ 15 min at 5 s/request)
 uv run python -m lakshya_scraper reclean --dry-run # what re-cleaning job_sources.raw would change, saves nothing
-uv run python -m lakshya_scraper reclean           # apply it (no network; rejected jobs are reported, not deleted)
+uv run python -m lakshya_scraper reclean           # apply it (no network; rejected feed jobs are removed, rejected page jobs only reported)
 uv run ruff check . && uv run ruff format --check . # lint + format check (CI runs the same)
 uv run uvicorn lakshya_backend.main:app --reload   # API, GET /health
 uv add --package lakshya-backend <dep>             # add a dependency to one package
@@ -58,6 +59,9 @@ cd frontend && npm run dev                         # Next.js 16 (untouched until
 
 - Every request to a site goes through `PoliteFetcher.fetch()`; never use httpx/requests/Playwright directly in a scraper.
 - A scraper only parses (`first_listing_url`, `parse_listing`, `parse_detail` → `RawJob`). Fetching, cleaning, saving and health live in the pipeline.
+- Official feeds use `FeedScraper` (`parse_entry` → `RawJob`, or None for jobs Nepal can't take) and `PoliteFetcher.fetch_text`, and carry whole jobs on `ListingItem.raw`, so no job page is opened. Their test fixtures are hand-written with invented companies.
+- Before trusting a feed's size, test its next-page URL against robots.txt: Himalayas' docs use `page=`, but its robots.txt forbids it, so it runs role searches instead. Never route around a robots.txt refusal.
+- Terms come first: in a source review, read terms and docs before any feed or job page, and stop contacting a site that answers 403 or 429.
 - Put `title`/`location` on `ListingItem` when the listing shows them, so tenders and jobs limited to outside Nepal are skipped without a request.
 - Health: a run with a `problem` (zero jobs, listing failed, most job pages failed, 403/429) → `degraded`, then `failing` after 3 runs in a row. Hitting the request limit is not a problem.
 - Chromium for Playwright: `uv run playwright install chromium`.

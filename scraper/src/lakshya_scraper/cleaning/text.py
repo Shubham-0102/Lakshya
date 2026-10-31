@@ -13,6 +13,22 @@ def ascii_digits(text: str) -> str:
     return text.translate(_DEVANAGARI_DIGITS)
 
 
+_MOJIBAKE = re.compile("[\xc2-\xf4][\x80-\xbf]+")
+
+
+def fix_mojibake(text: str) -> str:
+    """Repair UTF-8 that was read as Latin-1 on the way to us: "Ã©" -> "é". Only the broken
+    parts are touched, so the rest of the text can be any language."""
+
+    def repair(match: re.Match) -> str:
+        try:
+            return match.group().encode("latin-1").decode("utf-8")
+        except UnicodeDecodeError:
+            return match.group()
+
+    return _MOJIBAKE.sub(repair, text)
+
+
 _NUMBER_WORDS = {
     "one": "1", "two": "2", "three": "3", "four": "4", "five": "5",
     "six": "6", "seven": "7", "eight": "8", "nine": "9", "ten": "10",

@@ -107,3 +107,13 @@ def test_lines_without_an_amount_of_experience_are_ignored(line):
 )
 def test_lines_with_an_amount_of_experience_are_found(line):
     assert experience_line(f"About the role\n{line}\nPerks") == line
+
+
+def test_experience_line_passes_over_the_employers_own_history():
+    description = (
+        "We are Ricaris, a Barcelona-based company with over 15 years of experience.\n"
+        "You will design our campaigns.\n"
+        "3+ years of experience in graphic design."
+    )
+
+    assert experience_line(description) == "3+ years of experience in graphic design."

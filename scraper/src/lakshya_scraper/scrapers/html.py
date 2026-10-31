@@ -5,6 +5,7 @@ import re
 
 from bs4 import BeautifulSoup, Tag
 
+from lakshya_scraper.cleaning.experience import parse_experience
 from lakshya_scraper.cleaning.text import NUMBER_WORD, squash
 
 _BLOCK_TAGS = ["p", "div", "li", "ul", "ol", "br", "tr", "h1", "h2", "h3", "h4", "h5", "h6"]
@@ -81,9 +82,12 @@ _EXPERIENCE_LINE = re.compile(
 
 def experience_line(description: str | None) -> str | None:
     """The first line of a description that states how much experience is needed, e.g.
-    "2-3 years of prior work experience in BA roles." (the cleaner parses it)."""
-    lines = (description or "").splitlines()
-    return next((line for line in lines if _EXPERIENCE_LINE.search(line)), None)
+    "2-3 years of prior work experience in BA roles." (the cleaner parses it). Lines that only
+    look like it are passed over: an employer's own history often comes first."""
+    for line in (description or "").splitlines():
+        if _EXPERIENCE_LINE.search(line) and parse_experience(line) != (None, None):
+            return line
+    return None
 
 
 def country_name(code: str | None) -> str | None:

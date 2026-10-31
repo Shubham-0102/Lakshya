@@ -112,3 +112,42 @@ def test_unparseable_values_become_none_and_are_logged(caplog):
     assert job.location == "Province 1"
     assert "could not parse deadline 'whenever'" in caplog.text
     assert "unrecognized location kept as text ('Province 1')" in caplog.text
+
+
+def test_text_garbled_on_the_way_to_us_is_repaired():
+    job = clean(
+        leapfrog_raw(
+            title="Oracle Lead \xe2\x80\x93 Logistics",  # real shape, Remote OK
+            company="Caf\xc3\xa9 Labs",
+            description="Ciudad de M\xc3\xa9xico",
+        )
+    )
+
+    assert job.title == "Oracle Lead – Logistics"
+    assert job.company_name == "Café Labs"
+    assert job.description == "Ciudad de México"
+
+
+def test_text_that_is_fine_is_left_alone():
+    job = clean(leapfrog_raw(title="Développeur – पोखरा"))
+
+    assert job.title == "Développeur – पोखरा"
+
+
+def test_pay_that_cannot_be_yearly_keeps_only_its_wording():
+    job = clean(leapfrog_raw(salary="USD 40 - 48 per year"))  # real: hourly, labelled yearly
+
+    assert (job.salary_min, job.salary_max, job.salary_period) == (None, None, None)
+    assert job.salary_text == "USD 40 - 48 per year"
+
+
+def test_real_yearly_pay_is_kept():
+    job = clean(leapfrog_raw(salary="USD 55000 - 70000 per year"))
+
+    assert (job.salary_min, job.salary_max) == (55_000, 70_000)
+
+
+def test_low_yearly_pay_in_rupees_is_not_treated_as_mislabelled():
+    job = clean(leapfrog_raw(salary="NPR 4,000 per year"))
+
+    assert job.salary_max == 4_000

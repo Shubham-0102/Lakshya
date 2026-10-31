@@ -56,6 +56,27 @@ def years(value):
         ("We have 20 years in business. Requires 3 years of experience in sales", 3, None),
         ("Candidates should have 1-2 of experience in full-stack development using React", 1, 2),
         ("1.5 years of hands-on experience with payment systems in a regulated company", 1.5, None),
+        ("Strong experience (7+ years) building full stack web applications", 7, None),  # real
+        ("Extensive experience (ideally 5+ years) in application security and testing", 5, None),
+        ("Experience: 4+ years preferably within retail or commercial fleet management", 4, None),
+        ("We need someone with 5 years of experience at a large software company", 5, None),
+        # The employer's history, not a requirement (all real)
+        ("We are Ricaris, a Barcelona-based company with over 15 years of experience", None, None),
+        (
+            "With more than 35 years of experience in Nepal, the charity supports families",
+            None,
+            None,
+        ),
+        (
+            "With more than 120 engineers and over 11 years of industry experience, it builds",
+            None,
+            None,
+        ),
+        (
+            "one of the best software companies in Brazil with more than 28 years of experience",
+            None,
+            None,
+        ),
         # Nothing usable
         ("Relevant experience preferred", None, None),
         ("200 years", None, None),

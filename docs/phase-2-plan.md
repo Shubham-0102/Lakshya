@@ -27,11 +27,11 @@ Reviewed on 2026-10-31; verdicts, conditions and quotes are in `docs/sources.md`
 
 | Status | Sources |
 | --- | --- |
-| Allowed, pending approval | Himalayas, Remote OK, Jobicy, Arbeitnow, ICIMOD, Bajra Technologies |
+| Approved 2026-10-31 | Himalayas, Remote OK, Jobicy, Arbeitnow, ICIMOD, Bajra Technologies |
 | Unconfirmed or waiting | We Work Remotely, ReliefWeb |
 | Blocked | Remotive, YoungInnovations, Cotiviti, Yarsa Labs, CloudFactory (unclear), Deerwalk, EB Pearls |
 
-Himalayas reports 1,285 jobs open to Nepal, so it could supply most of the gate. Duplicates across feeds aren't removed until task 8, so the gate must be measured after that.
+Himalayas reports 1,285 jobs open to Nepal, but its robots.txt rules out paging, so only the first 20 of each search are reachable. Duplicates across feeds aren't removed until task 8, so the gate must be measured after that.
 
 ## Schema
 - `sources.recipe` (JSONB, nullable) and `sources.recipe_learned_at`: migration 0002.
