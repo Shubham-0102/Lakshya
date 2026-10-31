@@ -1,7 +1,18 @@
-# Local infrastructure: Postgres (with pgvector) and Redis.
-# The Celery worker and Beat services are added in Phase 1 task 9.
+# Postgres (with pgvector), Redis, and the scheduled scraper (Celery worker + Beat).
 # Settings come from .env (copy .env.example to .env first).
 name: lakshya
+
+# One image for everything Python; each service only changes the command
+x-scraper: &scraper
+  build:
+    context: .
+    dockerfile: docker/scraper/Dockerfile
+  image: lakshya-scraper
+  env_file: .env
+  environment:
+    # Inside Docker the database and Redis are reached by service name, not localhost
+    DATABASE_URL: postgresql+psycopg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+    REDIS_URL: redis://redis:6379/0
 
 services:
   db:
@@ -35,6 +46,38 @@ services:
       interval: 5s
       timeout: 3s
       retries: 10
+
+  # Runs once at startup, so tables and sources exist before the worker starts
+  migrate:
+    <<: *scraper
+    command: sh -c "alembic upgrade head && python -m lakshya_scraper.sync_sources"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  worker:
+    <<: *scraper
+    command: celery -A lakshya_scraper.celery_app worker --loglevel=INFO
+    init: true # reaps the Chromium processes each run leaves behind
+    shm_size: 1gb # Chromium crashes with Docker's default 64 MB of shared memory
+    restart: unless-stopped
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+
+  # Keep exactly one: two Beats would send every scheduled run twice
+  beat:
+    <<: *scraper
+    # The schedule file only remembers the last run, so losing it with the container is fine
+    command: celery -A lakshya_scraper.celery_app beat --loglevel=INFO --schedule=/tmp/celerybeat-schedule
+    restart: unless-stopped
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
 
 volumes:
   pgdata:

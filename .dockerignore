@@ -1,0 +1,16 @@
+# Secrets stay out of the image; Compose passes settings in when a container starts
+.env
+.env.*
+!.env.example
+
+.git
+.venv
+**/__pycache__
+.pytest_cache
+.ruff_cache
+**/tests
+conftest.py
+frontend
+evals
+docs
+*.md

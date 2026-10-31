@@ -18,6 +18,9 @@ build/
 node_modules/
 .next/
 
+# Celery Beat's local schedule file
+celerybeat-schedule*
+
 # Playwright output
 test-results/
 playwright-report/
