@@ -44,6 +44,18 @@ def years(value):
         ("Freshers can also apply", 0, 0),
         ("No experience required", 0, 0),
         ("Fresher or 1-2 years", 0, 2),
+        # Long sentences: years only count as a requirement with "experience" or "minimum"
+        (
+            "It offers paid placement to transform the educational experience of children. "
+            "It is two years of supervised programme to increase literacy.",  # real jobsnepal
+            None,
+            None,
+        ),
+        ("Join a 2 year paid placement teaching Math at Basic Level in rural schools", None, None),
+        ("Minimum 3 years in the banking sector, preferably in a commercial bank", 3, None),
+        ("We have 20 years in business. Requires 3 years of experience in sales", 3, None),
+        ("Candidates should have 1-2 of experience in full-stack development using React", 1, 2),
+        ("1.5 years of hands-on experience with payment systems in a regulated company", 1.5, None),
         # Nothing usable
         ("Relevant experience preferred", None, None),
         ("200 years", None, None),
