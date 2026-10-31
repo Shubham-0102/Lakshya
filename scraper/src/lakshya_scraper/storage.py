@@ -46,12 +46,17 @@ def get_or_create_company(session: Session, name: str, normalized_name: str) -> 
     return session.scalars(select(Company).where(Company.normalized_name == normalized_name)).one()
 
 
+def job_columns(job: CleanJob) -> dict:
+    """The CleanJob fields that are columns of the jobs table."""
+    columns = job.model_dump(exclude=_NOT_JOB_COLUMNS)
+    columns["skills"] = list(job.skills)  # Postgres arrays come from lists, not tuples
+    return columns
+
+
 def save_job(session: Session, source: Source, raw: RawJob, job: CleanJob) -> Job:
     """Store a new job, its company and the link back to the original posting."""
     company = get_or_create_company(session, job.company_name, job.company_normalized_name)
-    columns = job.model_dump(exclude=_NOT_JOB_COLUMNS)
-    columns["skills"] = list(job.skills)  # Postgres arrays come from lists, not tuples
-    new_job = Job(company=company, **columns)
+    new_job = Job(company=company, **job_columns(job))
     session.add(
         JobSource(
             job=new_job,
