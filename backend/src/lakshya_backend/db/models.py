@@ -82,6 +82,8 @@ class Source(TimestampMixin, Base):
     failure_count: Mapped[int] = mapped_column(server_default=text("0"))
     last_run_at: Mapped[datetime | None]
     last_success_at: Mapped[datetime | None]
+    recipe: Mapped[dict | None] = mapped_column(JSONB)  # how to read this site's pages
+    recipe_learned_at: Mapped[datetime | None]
 
 
 class Company(TimestampMixin, Base):

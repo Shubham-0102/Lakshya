@@ -20,7 +20,7 @@ Requires [Docker](https://docs.docker.com/get-docker/). The Python and frontend 
 
 ```bash
 # 1. Settings (once)
-cp .env.example .env
+cp .env.example .env                  # add a free GEMINI_API_KEY for learning recipes (optional for scraping)
 
 # 2. Everything that runs in Docker: Postgres, Redis and the scheduled scraper
 docker compose up -d --build

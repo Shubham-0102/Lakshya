@@ -19,6 +19,10 @@ class Settings(BaseSettings):
     )
     scraper_max_requests: int = 300
 
+    # AI: tried in this order when a model is busy. Free-tier models, so public job text only.
+    gemini_api_key: str | None = None
+    gemini_models: str = "gemini-3.8-flash,gemini-3.6-flash,gemini-3.5-flash-lite"
+
 
 @lru_cache
 def get_settings() -> Settings:
