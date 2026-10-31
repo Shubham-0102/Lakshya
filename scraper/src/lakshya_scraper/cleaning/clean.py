@@ -8,7 +8,12 @@ from lakshya_scraper.cleaning.dates import nepal_today, parse_date
 from lakshya_scraper.cleaning.experience import parse_experience
 from lakshya_scraper.cleaning.locations import Location, clean_location
 from lakshya_scraper.cleaning.salaries import NO_SALARY, parse_salary
-from lakshya_scraper.cleaning.titles import clean_title, is_job_posting, normalize_title
+from lakshya_scraper.cleaning.titles import (
+    clean_title,
+    is_job_posting,
+    limited_to_elsewhere,
+    normalize_title,
+)
 from lakshya_scraper.job_format import CleanJob, RawJob
 
 logger = logging.getLogger(__name__)
@@ -25,8 +30,8 @@ def clean(raw: RawJob) -> CleanJob | None:
         return None
 
     location = clean_location(raw.location) if raw.location else _NO_LOCATION
-    if location.outside_nepal:
-        logger.info("%s skipped: limited to outside Nepal (%r)", job, raw.location)
+    if location.outside_nepal or limited_to_elsewhere(raw.title):
+        logger.info("%s skipped: limited to outside Nepal (%r)", job, raw.location or raw.title)
         return None
     if not location.recognized:
         logger.info("%s: unrecognized location kept as text (%r)", job, raw.location)

@@ -396,3 +396,22 @@ def test_feed_that_asks_us_to_stop_counts_as_a_problem(db_session, source):
 
     assert result.problem
     assert result.stopped_early
+
+
+def test_a_feed_page_with_no_jobs_does_not_end_the_feed(db_session, source):
+    class TwoSearches(FakeFeed):
+        def parse_listing(self, html: str, url: str) -> ListingPage:
+            data = json.loads(html)
+            return ListingPage(self.items(data["jobs"]), data.get("next"))
+
+    second = f"{BASE}/search2"
+    fetcher = FeedFetcher(
+        {
+            FIRST_PAGE: json.dumps({"jobs": [], "next": second}),
+            second: json.dumps({"jobs": [{"id": "1", "title": "Engineer"}]}),
+        }
+    )
+
+    result = scrape(db_session, source, TwoSearches(), fetcher)
+
+    assert (result.listing_pages, result.new) == (2, 1)

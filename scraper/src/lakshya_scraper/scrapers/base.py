@@ -39,6 +39,7 @@ class ListingPage:
 class Scraper(ABC):
     slug: str  # matches sources.slug
     is_feed = False  # True: the listing is fetched as plain text, without a browser page
+    min_hours_between_runs = 0  # for sources that change less often than our schedule
     # CSS selectors to wait for on pages that build their content with JavaScript
     listing_wait_for: str | None = None
     detail_wait_for: str | None = None

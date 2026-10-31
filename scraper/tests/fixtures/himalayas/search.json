@@ -1,0 +1,61 @@
+{
+  "comments": "Hand-written test data in the shape of the real API. All companies are invented.",
+  "updatedAt": 1793460569,
+  "offset": 0,
+  "limit": 20,
+  "totalCount": 4,
+  "jobs": [
+    {
+      "title": "Backend Engineer &amp; Team Lead (Remote)",
+      "companyName": "Example Labs",
+      "companySlug": "example-labs",
+      "employmentType": "Full Time",
+      "minSalary": 3000,
+      "maxSalary": 6000,
+      "salaryPeriod": "monthly",
+      "seniority": ["Mid-level", "Senior"],
+      "currency": "USD",
+      "locationRestrictions": [],
+      "timezoneRestrictions": [],
+      "description": "<h2>About the role</h2><p>You will build APIs.</p><ul><li>3+ years of experience with Python</li><li>Good written English</li></ul>",
+      "pubDate": 1793281205,
+      "expiryDate": 1795855939,
+      "applicationLink": "https://himalayas.app/companies/example-labs/jobs/backend-engineer",
+      "guid": "https://himalayas.app/companies/example-labs/jobs/backend-engineer"
+    },
+    {
+      "title": "Junior Support Agent",
+      "companyName": "Sample Works",
+      "minSalary": null,
+      "maxSalary": null,
+      "salaryPeriod": "annual",
+      "seniority": ["Entry-level"],
+      "currency": null,
+      "locationRestrictions": ["India", "Nepal", "Sri Lanka"],
+      "timezoneRestrictions": [5.5, 5.75, 6],
+      "description": "<p>Help our customers by email.</p>",
+      "pubDate": 1793281205,
+      "expiryDate": null,
+      "applicationLink": "https://himalayas.app/companies/sample-works/jobs/support-agent",
+      "guid": "https://himalayas.app/companies/sample-works/jobs/support-agent"
+    },
+    {
+      "title": "Account Manager, US Only",
+      "companyName": "Sample Works",
+      "locationRestrictions": ["United States"],
+      "timezoneRestrictions": [],
+      "description": "<p>Not open to Nepal.</p>",
+      "applicationLink": "https://himalayas.app/companies/sample-works/jobs/account-manager",
+      "guid": "https://himalayas.app/companies/sample-works/jobs/account-manager"
+    },
+    {
+      "title": "Night Shift Analyst",
+      "companyName": "Sample Works",
+      "locationRestrictions": [],
+      "timezoneRestrictions": [-8, -7, -6, -5],
+      "description": "<p>United States working hours only.</p>",
+      "applicationLink": "https://himalayas.app/companies/sample-works/jobs/analyst",
+      "guid": "https://himalayas.app/companies/sample-works/jobs/analyst"
+    }
+  ]
+}

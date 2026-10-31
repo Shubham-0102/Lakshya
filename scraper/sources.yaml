@@ -31,6 +31,80 @@ sources:
       no terms published (checked 2026-10-28)
     enabled: true
 
+  # Approved feeds: their own docs allow this use, on the conditions in docs/sources.md
+  - slug: himalayas
+    name: Himalayas
+    base_url: https://himalayas.app
+    type: feed
+    compliance_status: approved
+    compliance_notes: >-
+      API docs allow showing jobs in our own app and terms clause 30A exempts the API; Apply must
+      use applicationLink, credit Himalayas, never pass jobs on (checked 2026-10-31)
+    enabled: true
+
+  - slug: remoteok
+    name: Remote OK
+    base_url: https://remoteok.com
+    type: feed
+    compliance_status: approved
+    compliance_notes: >-
+      API terms: followed link back to the job and name Remote OK as the source; no logo
+      (checked 2026-10-31)
+    enabled: true
+
+  - slug: jobicy
+    name: Jobicy
+    base_url: https://jobicy.com
+    type: feed
+    compliance_status: approved
+    compliance_notes: >-
+      API fair use allows our own products: credit Jobicy, keep its listing URL, call at most
+      once an hour (checked 2026-10-31)
+    enabled: true
+
+  - slug: arbeitnow
+    name: Arbeitnow
+    base_url: https://www.arbeitnow.com
+    type: feed
+    compliance_status: approved
+    compliance_notes: terms section 11 allows the API with a link back to Arbeitnow.com (checked 2026-10-31)
+    enabled: true
+
+  # Approved career pages: enabled once they have recipes (Phase 2, task 7)
+  - slug: icimod
+    name: ICIMOD Vacancies
+    base_url: https://www.icimod.org/get-involved/vacancies/
+    type: career_page
+    compliance_status: approved
+    compliance_notes: >-
+      terms allow reuse with attribution for non-commercial use, under the same conditions
+      (checked 2026-10-31)
+
+  - slug: bajra
+    name: Bajra Technologies Careers
+    base_url: https://bajratechnologies.com/jobs
+    type: career_page
+    compliance_status: approved
+    compliance_notes: robots.txt allows it; no terms found; openings not yet confirmed (checked 2026-10-31)
+
+  # Pending: could become sources, but something still has to happen first
+  - slug: weworkremotely
+    name: We Work Remotely
+    base_url: https://weworkremotely.com
+    type: feed
+    compliance_status: pending
+    compliance_notes: >-
+      RSS page allows use with attribution, but a category page answered 403 and the terms are
+      unread (checked 2026-10-31)
+
+  - slug: reliefweb
+    name: ReliefWeb
+    base_url: https://reliefweb.int
+    type: feed
+    compliance_status: pending
+    compliance_notes: >-
+      needs a pre-approved appname; api.reliefweb.int robots.txt is Disallow / (checked 2026-10-31)
+
   # Blocked: we asked (or will ask) for permission instead
   - slug: merojob
     name: Merojob
@@ -66,3 +140,52 @@ sources:
     type: career_page
     compliance_status: blocked
     compliance_notes: "blog.khalti.com robots.txt is Disallow: / for all crawlers"
+
+  - slug: remotive
+    name: Remotive
+    base_url: https://remotive.com
+    type: feed
+    compliance_status: blocked
+    compliance_notes: terms of use forbid automated access without written permission; the stricter text wins
+
+  - slug: cotiviti
+    name: Cotiviti Careers
+    base_url: https://www.cotiviti.com/careers
+    type: career_page
+    compliance_status: blocked
+    compliance_notes: terms forbid robots and crawlers that harvest or compile information
+
+  - slug: younginnovations
+    name: YoungInnovations
+    base_url: https://younginnovations.com.np/vacancy
+    type: career_page
+    compliance_status: blocked
+    compliance_notes: terms forbid reproducing or reusing content without written permission
+
+  - slug: yarsa
+    name: Yarsa Labs
+    base_url: https://yarsalabs.com/careers/
+    type: career_page
+    compliance_status: blocked
+    compliance_notes: unclear whether terms forbidding copying cover the careers page, so treated as blocked
+
+  - slug: cloudfactory
+    name: CloudFactory
+    base_url: https://apply.workable.com/cloudfactory/
+    type: career_page
+    compliance_status: blocked
+    compliance_notes: Workable's terms bind customers, so the rules for public job pages are unclear
+
+  - slug: deerwalk
+    name: Deerwalk
+    base_url: https://deerwalk.com
+    type: career_page
+    compliance_status: blocked
+    compliance_notes: "robots.txt disallows the homepage"
+
+  - slug: ebpearls
+    name: EB Pearls
+    base_url: https://ebpearls.com
+    type: career_page
+    compliance_status: blocked
+    compliance_notes: "robots.txt disallows the homepage"

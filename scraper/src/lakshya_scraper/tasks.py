@@ -5,6 +5,7 @@ site that is already struggling. The source's health shows that something went w
 """
 
 import logging
+from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -24,15 +25,20 @@ SCRAPE_TIME_LIMIT_SECONDS = 50 * 60
 
 def scrapable_slugs(session: Session) -> list[str]:
     query = (
-        select(Source.slug)
+        select(Source.slug, Source.last_run_at)
         .where(Source.enabled, Source.compliance_status == ComplianceStatus.APPROVED)
         .order_by(Source.slug)
     )
-    slugs = list(session.scalars(query))
-    for slug in slugs:
+    now = datetime.now(UTC)
+    due = []
+    for slug, last_run in session.execute(query):
         if slug not in SCRAPERS:
             logger.warning("%s is enabled but has no scraper", slug)
-    return [slug for slug in slugs if slug in SCRAPERS]
+        elif not last_run or now - last_run >= timedelta(
+            hours=SCRAPERS[slug].min_hours_between_runs
+        ):
+            due.append(slug)
+    return due
 
 
 @app.task

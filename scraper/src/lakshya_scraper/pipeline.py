@@ -23,7 +23,7 @@ from lakshya_backend.db.models import ComplianceStatus, HealthStatus, Source
 from lakshya_backend.db.session import get_session
 from lakshya_scraper.cleaning import clean
 from lakshya_scraper.cleaning.locations import clean_location
-from lakshya_scraper.cleaning.titles import is_job_posting
+from lakshya_scraper.cleaning.titles import is_job_posting, limited_to_elsewhere
 from lakshya_scraper.fetching import (
     FetchError,
     PageLimitReached,
@@ -233,7 +233,8 @@ def collect_listing(
             result.listing_pages += 1
             for item in page.items:
                 items.setdefault(item.external_id, item)
-            if not page.items or result.listing_pages == max_pages:
+            # An empty page ends a site's listing; a feed decides for itself with next_url
+            if (not page.items and not scraper.is_feed) or result.listing_pages == max_pages:
                 break
             url = page.next_url
     except PageLimitReached as stop:
@@ -256,8 +257,9 @@ def worth_opening(item: ListingItem) -> bool:
     if item.title and not is_job_posting(item.title):
         logger.info("skipping %s: not a job posting (%r)", item.url, item.title)
         return False
-    if item.location and clean_location(item.location).outside_nepal:
-        logger.info("skipping %s: limited to outside Nepal (%r)", item.url, item.location)
+    limited_by_title = bool(item.title) and limited_to_elsewhere(item.title)
+    if limited_by_title or (item.location and clean_location(item.location).outside_nepal):
+        logger.info("skipping %s: limited to outside Nepal (%r)", item.url, item.title)
         return False
     return True
 

@@ -1,3 +1,4 @@
+from datetime import UTC, datetime, timedelta
 from uuid import uuid4
 
 import pytest
@@ -9,7 +10,7 @@ from lakshya_scraper.pipeline import LOCK_TIMEOUT_SECONDS, SourceBusy, run_sourc
 from lakshya_scraper.scrapers import SCRAPERS
 
 
-def add_source(session, slug, enabled=True, status=ComplianceStatus.APPROVED):
+def add_source(session, slug, enabled=True, status=ComplianceStatus.APPROVED, last_run_at=None):
     session.add(
         Source(
             slug=slug,
@@ -18,9 +19,18 @@ def add_source(session, slug, enabled=True, status=ComplianceStatus.APPROVED):
             type=SourceType.PORTAL,
             compliance_status=status,
             enabled=enabled,
+            last_run_at=last_run_at,
         )
     )
     session.flush()
+
+
+def hours_ago(hours):
+    return datetime.now(UTC) - timedelta(hours=hours)
+
+
+class ChangesDaily:
+    min_hours_between_runs = 20
 
 
 def test_only_enabled_approved_sources_with_a_scraper_are_scraped(db_session, monkeypatch):
@@ -33,6 +43,27 @@ def test_only_enabled_approved_sources_with_a_scraper_are_scraped(db_session, mo
     add_source(db_session, "no-scraper-yet")
 
     assert tasks.scrapable_slugs(db_session) == ["ready"]
+
+
+def test_source_that_changes_daily_is_not_scraped_twice_a_day(db_session, monkeypatch):
+    monkeypatch.setitem(SCRAPERS, "ran-this-morning", ChangesDaily)
+    monkeypatch.setitem(SCRAPERS, "ran-yesterday", ChangesDaily)
+    monkeypatch.setitem(SCRAPERS, "never-ran", ChangesDaily)
+    add_source(db_session, "ran-this-morning", last_run_at=hours_ago(12))
+    add_source(db_session, "ran-yesterday", last_run_at=hours_ago(24))
+    add_source(db_session, "never-ran")
+
+    assert tasks.scrapable_slugs(db_session) == ["never-ran", "ran-yesterday"]
+
+
+def test_other_sources_run_on_every_schedule(db_session, monkeypatch):
+    class AnySource:
+        min_hours_between_runs = 0
+
+    monkeypatch.setitem(SCRAPERS, "ran-recently", AnySource)
+    add_source(db_session, "ran-recently", last_run_at=hours_ago(1))
+
+    assert tasks.scrapable_slugs(db_session) == ["ran-recently"]
 
 
 def test_dispatch_queues_one_task_per_source(monkeypatch):

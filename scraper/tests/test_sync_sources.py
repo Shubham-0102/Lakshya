@@ -67,7 +67,15 @@ def test_typo_in_yaml_is_caught_before_the_database(tmp_path):
 def test_real_sources_file_is_valid_and_only_approved_sources_are_enabled():
     configs = load_sources()
 
-    assert {c.slug for c in configs if c.enabled} == {"jobsnepal", "f1soft", "leapfrog"}
+    assert {c.slug for c in configs if c.enabled} == {
+        "arbeitnow",
+        "f1soft",
+        "himalayas",
+        "jobicy",
+        "jobsnepal",
+        "leapfrog",
+        "remoteok",
+    }
     assert all(c.compliance_status == ComplianceStatus.APPROVED for c in configs if c.enabled)
 
 

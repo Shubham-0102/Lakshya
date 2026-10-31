@@ -1,0 +1,45 @@
+[
+  {
+    "last_updated": 1793404804,
+    "legal": "Hand-written test data in the shape of the real feed. All companies are invented."
+  },
+  {
+    "slug": "sales-and-support-example-labs-101",
+    "id": "101",
+    "epoch": 1793347212,
+    "date": "2026-10-30T08:00:12+00:00",
+    "company": "Example &amp; Sons",
+    "position": "Sales &amp; Support Engineer",
+    "tags": ["support", "non tech"],
+    "description": "<p>Help customers.</p><p>2+ years of experience in support.</p>",
+    "location": "",
+    "apply_url": "https://remoteOK.com/remote-jobs/sales-and-support-example-labs-101",
+    "salary_min": 80000,
+    "salary_max": 100000,
+    "url": "https://remoteOK.com/remote-jobs/sales-and-support-example-labs-101"
+  },
+  {
+    "slug": "writer-sample-works-102",
+    "id": 102,
+    "date": "2026-10-29T08:00:12+00:00",
+    "company": "Sample Works",
+    "position": "Content Writer",
+    "description": "<p>Write articles.</p>",
+    "location": "Worldwide",
+    "salary_min": 0,
+    "salary_max": 0,
+    "url": "https://remoteOK.com/remote-jobs/writer-sample-works-102"
+  },
+  {
+    "slug": "nurse-sample-works-103",
+    "id": "103",
+    "date": "2026-10-28T08:00:12+00:00",
+    "company": "Sample Works",
+    "position": "Remote Nurse",
+    "description": "<p>Licensed in Massachusetts.</p>",
+    "location": "Boston",
+    "salary_min": 0,
+    "salary_max": 0,
+    "url": "https://remoteOK.com/remote-jobs/nurse-sample-works-103"
+  }
+]

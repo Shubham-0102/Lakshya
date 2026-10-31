@@ -1,0 +1,60 @@
+{
+  "data": [
+    {
+      "slug": "platform-engineer-example-labs-1",
+      "company_name": "Example Labs GmbH",
+      "title": "Platform Engineer",
+      "description": "<p>Run our platform.</p><p>4+ years of experience with Kubernetes.</p>",
+      "remote": true,
+      "url": "https://www.arbeitnow.com/jobs/companies/example-labs/platform-engineer-1",
+      "tags": ["IT"],
+      "job_types": ["Full Time"],
+      "location": "Remote",
+      "created_at": 1793455253
+    },
+    {
+      "slug": "designer-sample-works-2",
+      "company_name": "Sample Works GmbH",
+      "title": "Product Designer",
+      "description": "<p>Design our app.</p>",
+      "remote": true,
+      "url": "https://www.arbeitnow.com/jobs/companies/sample-works/designer-2",
+      "location": "Remote job",
+      "created_at": 1793455253
+    },
+    {
+      "slug": "sales-sample-works-3",
+      "company_name": "Sample Works GmbH",
+      "title": "Sales Manager",
+      "description": "<p>Sell in Germany.</p>",
+      "remote": true,
+      "url": "https://www.arbeitnow.com/jobs/companies/sample-works/sales-3",
+      "location": "Berlin",
+      "created_at": 1793455253
+    },
+    {
+      "slug": "chef-sample-works-4",
+      "company_name": "Sample Works GmbH",
+      "title": "Chef",
+      "description": "<p>On site.</p>",
+      "remote": false,
+      "url": "https://www.arbeitnow.com/jobs/companies/sample-works/chef-4",
+      "location": "Munich",
+      "created_at": 1793455253
+    }
+  ],
+  "links": {
+    "first": "https://www.arbeitnow.com/api/job-board-api?page=1",
+    "last": null,
+    "prev": null,
+    "next": "https://www.arbeitnow.com/api/job-board-api?page=2"
+  },
+  "meta": {
+    "current_page": 1,
+    "from": 1,
+    "path": "https://www.arbeitnow.com/api/job-board-api",
+    "per_page": 300,
+    "to": 300,
+    "terms": "Hand-written test data in the shape of the real API. All companies are invented."
+  }
+}

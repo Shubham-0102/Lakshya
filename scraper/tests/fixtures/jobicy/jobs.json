@@ -1,0 +1,44 @@
+{
+  "apiVersion": "hand-written test data based on the published API docs",
+  "jobCount": 3,
+  "hasMore": true,
+  "nextCursor": "abc+/=def",
+  "success": true,
+  "jobs": [
+    {
+      "id": 501,
+      "url": "https://jobicy.com/jobs/501-data-engineer",
+      "jobTitle": "Data Engineer &amp; Analyst",
+      "companyName": "Example Labs",
+      "jobIndustry": ["Data Science"],
+      "jobType": ["Full-Time"],
+      "jobGeo": "Anywhere",
+      "jobLevel": "Senior",
+      "jobDescription": "<p>Build pipelines.</p>",
+      "pubDate": "2026-10-30T08:00:12+00:00",
+      "salaryMin": 60000,
+      "salaryMax": 90000,
+      "salaryCurrency": "USD",
+      "salaryPeriod": "year"
+    },
+    {
+      "id": 502,
+      "url": "https://jobicy.com/jobs/502-support",
+      "jobTitle": "Support Specialist",
+      "companyName": "Sample Works",
+      "jobGeo": "APAC",
+      "jobLevel": "Any",
+      "jobDescription": "<p>Help customers.</p><p>2 years of experience in support.</p>",
+      "pubDate": "2026-10-29T08:00:12+00:00"
+    },
+    {
+      "id": 503,
+      "url": "https://jobicy.com/jobs/503-recruiter",
+      "jobTitle": "Recruiter",
+      "companyName": "Sample Works",
+      "jobGeo": "USA",
+      "jobDescription": "<p>Hire in the US.</p>",
+      "pubDate": "2026-10-28T08:00:12+00:00"
+    }
+  ]
+}

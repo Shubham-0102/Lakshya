@@ -1,6 +1,11 @@
 import pytest
 
-from lakshya_scraper.cleaning.titles import clean_title, is_job_posting, normalize_title
+from lakshya_scraper.cleaning.titles import (
+    clean_title,
+    is_job_posting,
+    limited_to_elsewhere,
+    normalize_title,
+)
 
 
 @pytest.mark.parametrize(
@@ -72,3 +77,37 @@ def test_real_jobs_are_not_mistaken_for_notices(title):
 )
 def test_normalize_title(title, expected):
     assert normalize_title(title) == expected
+
+
+@pytest.mark.parametrize(
+    "title",
+    [
+        "Web Developer: WordPress & HubSpot (U.S. Based, Part Time)",  # real, Himalayas
+        "Account Executive, US Only",
+        "Support Agent - USA Only",
+        "Designer (UK based)",
+        "Nurse - US Citizens",
+        "Sales Manager, Europe Only",
+        "Engineer based in the United States",
+        "Recruiter based in Canada",
+        "Field Engineer EMEA-based",
+    ],
+)
+def test_title_limits_the_job_to_elsewhere(title):
+    assert limited_to_elsewhere(title)
+
+
+@pytest.mark.parametrize(
+    "title",
+    [
+        "Backend Engineer",
+        "Country Manager Canada",  # names a market, doesn't say who can apply
+        "Join us only if you love Python",
+        "Software Engineer, Trust and Safety",
+        "Customer Support (Asia Based)",
+        "Engineer based in Nepal",
+        "Focus on US Market",
+    ],
+)
+def test_title_does_not_limit_the_job(title):
+    assert not limited_to_elsewhere(title)

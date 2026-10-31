@@ -73,3 +73,20 @@ def _fix_all_caps(title: str) -> str:
         return word.capitalize()
 
     return re.sub(r"[A-Za-z]+", fix_word, title)
+
+
+# Short codes are matched in capitals only, so "join us only if..." isn't read as "US only"
+_ELSEWHERE = (
+    r"(?:(?-i:US|USA|UK|EU|EMEA|LATAM)|u\.s\.(?:a\.)?|u\.k\.|united states|canada|europe|australia)"
+)
+# Who can apply, when only the title says so: "Web Developer (U.S. Based)", "Sales, US Only"
+_LIMITED_ELSEWHERE = re.compile(
+    rf"\b{_ELSEWHERE}(?:\s*[-–]\s*|\s+)(?:only|based|residents?|citizens?)\b"
+    rf"|\b(?:based|located|residing) in (?:the )?{_ELSEWHERE}(?![\w.])",
+    re.IGNORECASE,
+)
+
+
+def limited_to_elsewhere(title: str) -> bool:
+    """True if a title itself limits the job to somewhere people in Nepal can't apply from."""
+    return bool(_LIMITED_ELSEWHERE.search(title))

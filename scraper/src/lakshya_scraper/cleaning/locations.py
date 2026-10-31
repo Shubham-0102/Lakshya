@@ -68,7 +68,7 @@ _FOREIGN = _whole_words(_FOREIGN_PLACES)
 _NEPAL = re.compile(r"\bnepal\b")
 _REMOTE = re.compile(r"\b(remote|work from home|wfh|telecommut\w*|telework\w*|worldwide)\b")
 # Words next to "remote" that don't limit a job to one place
-_OPEN_TO_NEPAL = re.compile(r"\b(global(ly)?|anywhere|asia|apac|hybrid)\b")
+_OPEN_TO_NEPAL = re.compile(r"\b(global(ly)?|anywhere|asia|apac|hybrid|jobs?)\b")
 # Placeholders from sites' posting forms that name no place, e.g. "Other - Specify"
 _PLACEHOLDER = re.compile(r"^(other( ?- ?specify)?|n/?a|not specified|-+)$")
 _DISTRICT_WORDS = re.compile(
