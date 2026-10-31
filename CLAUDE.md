@@ -13,7 +13,7 @@
 ## Current status
 
 - Phase 1 (Scraping basics): done 2026-10-31. Plan and decisions: `docs/phase-1-plan.md`. Beat was proven with a temporary one-minute schedule; the first run on the real schedule (06:00 Kathmandu, 2026-11-01) still has to be confirmed in `docker compose logs beat` and `sources.last_run_at`.
-- Phase 2 (Smart scraping): proposed in `docs/phase-2-plan.md`, **not yet approved**. Don't start until it is. Task 1 is a source review that stops for approval. Tasks 4 to 7 need `GEMINI_API_KEY` in `.env` (Gemini free tier); the user doesn't have a key yet.
+- Phase 2 (Smart scraping): proposed in `docs/phase-2-plan.md`, **not yet approved**. Don't start until it is. Task 1 is a source review that stops for approval. Tasks 4 to 7 use `GEMINI_API_KEY`, which is in `.env` and works (free tier, checked 2026-10-31). Never print or read that value; check it from a script that reports only its format.
 - Compliance (`docs/sources.md`): of the job portals, only jobsnepal is allowed; merojob, kumarijob, kantipurjob and ramrojob forbid scraping or reuse in their terms; hamrojob is a parked domain. Company career pages: F1Soft and Leapfrog are allowed.
 - Approved sources: jobsnepal, F1Soft careers, Leapfrog careers.
 - The user is sending permission emails to the blocked portals (template in `docs/sources.md`).
