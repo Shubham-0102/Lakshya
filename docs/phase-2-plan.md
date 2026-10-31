@@ -1,6 +1,6 @@
 # Phase 2 plan: Smart scraping (weeks 4–6)
 
-**Status: proposed, not yet approved.** Each task still gets its own detailed plan and approval before any code is written.
+Approved 2026-10-31. Each task still gets its own detailed plan and approval before any code is written.
 
 ## Done when
 - 10+ sources are enabled, each with a compliance review in `docs/sources.md`.
