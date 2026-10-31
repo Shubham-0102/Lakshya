@@ -116,6 +116,52 @@ Most of the Nepali portals forbid scraping (above), so the other Phase 1 sources
   - The careers page also shows recruiter names and employee testimonials. These are personal data and must not be collected.
   - Jobs outside Nepal (Pune) are out of scope unless they are remote. Decide in the cleaning task whether to drop them or keep them with their location.
 
+## Phase 2 review
+
+Checked on 2026-10-31, about 100 requests in total, through `PoliteFetcher` (robots.txt before every URL, at least 5 seconds per site, user agent `Lakshya/0.1`), plus one direct read of `api.reliefweb.int/robots.txt`. **Pending approval.** Nothing below is enabled yet.
+
+**Rule used:** the same as above. A site's own API or feed documentation counts as its terms for that API or feed, and it overrides general website terms only when the site says so or the two clearly don't conflict. When they conflict, the stricter one wins.
+
+### Remote job feeds
+
+| Source | What its own pages say | Size | Verdict |
+| --- | --- | --- | --- |
+| **Himalayas** | Docs: "You can show the jobs on your own job board, site or app without asking us first." Terms clause 30A exempts the public API and feeds from the ban on automated access | 1,285 jobs for `country=Nepal`; 19 of the 20 sampled have no location limit | ✅ **Allowed, with conditions** |
+| **Remote OK** | API terms in the feed's first element: link back and name Remote OK, or access is suspended | 99 newest jobs; 66 look usable from Nepal | ✅ **Allowed, with conditions** |
+| **Jobicy** | Fair use: "You may use Jobicy listings in your own products and user experiences without requesting individual permission." Most integrations need no agreement | Not measured | ✅ **Allowed, with conditions** |
+| **Arbeitnow** | Terms section 11 covers the API: link back; permission can be revoked. API note: "This is a free public API for jobs, please do not abuse." | 300 on page 1, only 12 remote and mostly German | ✅ **Allowed, low value** |
+| **We Work Remotely** | "Anyone can use the feed, all we ask is that you attribute the links back" | Not measured | ⚠️ **Unconfirmed:** a category page answered 403 and the terms weren't read |
+| **ReliefWeb** | "Anyone can use the ReliefWeb API", but every call now needs a pre-approved `appname`, and `api.reliefweb.int/robots.txt` is `Disallow: /`, so `PoliteFetcher` refuses it | Not measured | ⏸️ **Pending:** needs an approved appname, requested by the project owner |
+| **Remotive** | The API page welcomes developers, but the Terms of Use forbid automated access "without our written permission" and making listings available to any third party | Not measured | ❌ **Blocked:** the stricter text wins; ask for permission |
+
+**Conditions we must keep:**
+- **Himalayas:** every Apply action uses the API's `applicationLink`, never a direct employer link. Show visible credit and a link to himalayas.app. Do not pass the jobs on, including through feeds or `JobPosting` structured data. Re-read the feed daily and stop showing jobs that left it. Its docs recommend a free API key for anything beyond a quick test.
+- **Remote OK:** a normal link back to the job on Remote OK, without `nofollow`, naming Remote OK as the source. Don't use its logo.
+- **Jobicy:** credit Jobicy, keep the Jobicy listing URL, never present its jobs as our own, and poll at most once an hour.
+- **Arbeitnow:** a link back to Arbeitnow.com on our platform.
+- **We Work Remotely:** attribute the links back.
+
+### Nepali career pages
+
+| Source | robots.txt | Terms | Openings when checked | Verdict |
+| --- | --- | --- | --- | --- |
+| **ICIMOD** | Allowed | Reuse allowed with attribution, for non-commercial, research, educational or personal use, under the same conditions | 1 vacancy, plus a consultant roster | ✅ **Allowed** while Lakshya stays non-commercial |
+| **Bajra Technologies** | Allowed | None found | Hiring page exists; openings not confirmed | ✅ **Allowed**, check openings before building |
+| Nabil Bank | Allowed | Not read | "No positions are currently available" | ⏸️ Later, if it posts openings |
+| Genese Solution | Allowed | None found | No roles shown | ⏸️ Later |
+| CloudFactory | Allowed | Workable's terms bind its customers, not visitors, so the rules for public job pages are unclear | Not confirmed | ⏸️ Unclear, treated as blocked |
+| Yarsa Labs | Allowed | Its terms forbid copying from the Service without permission; unclear whether they cover the careers page | Not confirmed | ❌ Unclear, treated as blocked |
+| YoungInnovations | Allowed | "Reproduce, redistribute, or reuse any content" needs written permission | None | ❌ **Blocked** |
+| Cotiviti | Allowed | Forbids any robot or crawler "for the purpose of harvesting or compiling information" | Not checked | ❌ **Blocked** |
+| Deerwalk | Homepage disallowed | Not read | Not read | ❌ **Blocked** by robots.txt |
+| EB Pearls | Homepage disallowed | Not read | Not read | ❌ **Blocked** by robots.txt |
+| Logpoint, Ncell | Not applicable | Not read | The guessed careers URL returned 404 or nothing useful | Not sources for now |
+
+**Mistakes to learn from:**
+- The review's link-following matched "api" and opened the Arbeitnow and Remote OK feeds, and a few job pages on Arbeitnow, Remotive and Jobicy, before their terms had been read. Terms must come first. The later career-page pass only followed links to terms and careers pages.
+- Jobicy answered 429 and We Work Remotely answered 403 during this review, even at 5 seconds per request. The fetcher stopped at once, and neither site was contacted again that day.
+- Third-party listings were wrong about Himalayas (they implied it couldn't be used) and unclear about Remotive. Only a site's own pages count.
+
 ## Permission request template
 
 The project owner sends these; nothing is sent automatically. Send to the blocked portals to ask for permission or a feed, and to jobsnepal as a courtesy.

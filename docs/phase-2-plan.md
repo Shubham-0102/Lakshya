@@ -23,20 +23,15 @@ Approved 2026-10-31. Each task still gets its own detailed plan and approval bef
 10. **Deduplication is hand-written and explainable.** Candidates are found by normalized company, then compared on title similarity (`pg_trgm`), location and description. Thresholds are tuned on labelled pairs from our own data. Uncertain matches stay separate: a duplicate is annoying, but merging two different jobs loses one.
 
 ## Sources
-Only 3 sources are enabled today. On 2026-10-31 they listed 179 jobs and the database held 164, growing by about 13 a day (38 new in 3 days). At that rate they alone would need about 2 months to reach 1,000, so the gate depends on new sources. Everything in this table comes from third-party listings and **must be confirmed on each site's own terms in task 1.**
+Reviewed on 2026-10-31; verdicts, conditions and quotes are in `docs/sources.md`. On that date the 3 enabled sources listed 179 jobs and the database held 164, growing by about 13 a day (38 new in 3 days). At that rate they alone would need about 2 months to reach 1,000, so the gate depends on new sources.
 
-| Candidate | Type | What we know so far |
-| --- | --- | --- |
-| Remote OK | Feed | Public API, about 100 newest jobs; link back and name the source |
-| Jobicy | Feed | Public API, recent jobs; credit it and send applicants to the original job |
-| Arbeitnow | Feed | Public API; link back appreciated; mostly Europe |
-| We Work Remotely | Feed | Publishes RSS feeds |
-| ReliefWeb | Feed | UN OCHA service with an API; may require a pre-approved app name; can filter to Nepal |
-| Himalayas | Feed | Reportedly bars republishing on third-party job sites: likely blocked |
-| Remotive | Feed | Sources conflict on whether aggregators are allowed: blocked unless its terms clearly allow it |
-| CloudFactory | Career page | Backup from the Phase 1 review; Workable's terms not yet checked |
-| More Nepali companies, banks, NGOs | Career pages | To be found. Each adds few jobs, but they are the most relevant to our users. These are what recipes are for. |
-| Blocked portals | Portals | Only if they reply to the permission emails |
+| Status | Sources |
+| --- | --- |
+| Allowed, pending approval | Himalayas, Remote OK, Jobicy, Arbeitnow, ICIMOD, Bajra Technologies |
+| Unconfirmed or waiting | We Work Remotely, ReliefWeb |
+| Blocked | Remotive, YoungInnovations, Cotiviti, Yarsa Labs, CloudFactory (unclear), Deerwalk, EB Pearls |
+
+Himalayas reports 1,285 jobs open to Nepal, so it could supply most of the gate. Duplicates across feeds aren't removed until task 8, so the gate must be measured after that.
 
 ## Schema
 - `sources.recipe` (JSONB, nullable) and `sources.recipe_learned_at`: migration 0002.
