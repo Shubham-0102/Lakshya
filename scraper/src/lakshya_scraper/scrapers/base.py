@@ -17,7 +17,7 @@ class ListingItem:
 
     external_id: str
     url: str
-    # If the listing shows these, the pipeline can skip tenders and on-site jobs outside
+    # If the listing shows these, the pipeline can skip tenders and jobs limited to outside
     # Nepal without opening their job pages (fewer requests to the site)
     title: str | None = None
     location: str | None = None

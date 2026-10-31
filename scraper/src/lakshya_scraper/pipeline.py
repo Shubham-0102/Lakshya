@@ -61,7 +61,7 @@ class RunResult:
     found: int = 0  # postings on the listing
     seen_again: int = 0  # already stored: only last_seen_at was updated
     new: int = 0  # saved as new jobs
-    skipped: int = 0  # tenders, on-site jobs outside Nepal, pages robots.txt disallows
+    skipped: int = 0  # tenders, jobs limited to outside Nepal, pages robots.txt disallows
     failed: int = 0  # job pages that couldn't be fetched, read or saved
     stopped_early: str | None = None  # request limit reached, or the site asked us to stop
     problem: str | None = None  # why the source is degraded; None means healthy
@@ -247,15 +247,13 @@ def collect_listing(
 
 
 def worth_opening(item: ListingItem) -> bool:
-    """Skip tenders and on-site jobs outside Nepal using what the listing already shows."""
+    """Skip tenders and jobs limited to outside Nepal using what the listing already shows."""
     if item.title and not is_job_posting(item.title):
         logger.info("skipping %s: not a job posting (%r)", item.url, item.title)
         return False
-    if item.location:
-        location = clean_location(item.location)
-        if location.outside_nepal and not location.is_remote:
-            logger.info("skipping %s: outside Nepal (%r)", item.url, item.location)
-            return False
+    if item.location and clean_location(item.location).outside_nepal:
+        logger.info("skipping %s: limited to outside Nepal (%r)", item.url, item.location)
+        return False
     return True
 
 

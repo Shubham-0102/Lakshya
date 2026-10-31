@@ -58,11 +58,19 @@ def test_onsite_job_outside_nepal_is_skipped():
     assert clean(leapfrog_raw(location="Pune, India")) is None
 
 
-def test_remote_job_outside_nepal_is_kept():
-    job = clean(leapfrog_raw(location="Remote (India)"))
+def test_remote_job_limited_to_another_country_is_skipped():
+    assert clean(leapfrog_raw(location="Remote (India)")) is None
+
+
+def test_remote_job_limited_to_an_unknown_place_is_skipped():
+    assert clean(leapfrog_raw(location="Remote - Boston")) is None  # real, Remote OK
+
+
+def test_remote_job_open_to_nepal_is_kept():
+    job = clean(leapfrog_raw(location="Remote - Worldwide"))
 
     assert job.is_remote
-    assert job.location == "Remote (India)"
+    assert job.location is None
 
 
 def test_salary_is_parsed_and_original_wording_kept():

@@ -32,6 +32,13 @@ from lakshya_scraper.cleaning.locations import clean_location, is_known_place
         ("Kathmandu (Hybrid/Remote)", "Kathmandu", True, False),
         ("Remote (USA)", "Remote (USA)", True, True),
         ("Remote, Nepal", "Nepal", True, False),
+        ("Remote - Worldwide", None, True, False),  # how the feeds read: nothing to store
+        ("Remote - Remote", None, True, False),
+        ("Remote - Asia", "Remote - Asia", True, False),
+        ("Remote - Anywhere", "Remote - Anywhere", True, False),
+        ("Kathmandu (Remote)", "Kathmandu", True, False),
+        ("Remote - Boston", "Remote - Boston", True, True),  # real, Remote OK: unknown place
+        ("Your Remote US Home Office", "Your Remote US Home Office", True, True),  # real
         ("Other - Specify, Nepal", "Nepal", False, False),  # real, jobsnepal form placeholder
         ("Other - Specify", None, False, False),
     ],

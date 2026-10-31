@@ -17,7 +17,7 @@
 - Compliance (`docs/sources.md`): of the job portals, only jobsnepal is allowed; merojob, kumarijob, kantipurjob and ramrojob forbid scraping or reuse in their terms; hamrojob is a parked domain. Company career pages: F1Soft and Leapfrog are allowed.
 - Approved sources: jobsnepal, F1Soft careers, Leapfrog careers.
 - The user is sending permission emails to the blocked portals (template in `docs/sources.md`).
-- Approved cleaning decisions: on-site jobs outside Nepal are dropped (remote ones kept); a salary with no currency is assumed NPR if ≥ 1,000; ambiguous numeric dates are day/month; a year ≥ 2070 means Bikram Sambat.
+- Approved cleaning decisions: jobs people in Nepal can't take are dropped, both on-site jobs abroad and remote jobs limited to other places (changed 2026-10-31; a remote job naming any place except Nepal, Asia or anywhere counts as limited); a salary with no currency is assumed NPR if ≥ 1,000; ambiguous numeric dates are day/month; a year ≥ 2070 means Bikram Sambat.
 - Where things live: `cleaning/` (`clean(raw) -> CleanJob | None`, one pure module per field), `fetching/` (hand-written RFC 9309 robots parser, Redis throttle, `PoliteFetcher`), `pipeline.py` (`run_source` → `scrape`), `storage.py`, `reclean.py`, `celery_app.py` (schedule), `tasks.py`, `scrapers/{jobsnepal,f1soft,leapfrog}.py`, `job_format.py` (`RawJob`, `CleanJob`), `docker/scraper/Dockerfile`.
 - Dev database on 2026-10-31: 164 jobs (jobsnepal 137, F1Soft 20, Leapfrog 7), 114 companies, all 3 sources healthy, about 13 new jobs a day.
 - Worth checking: job 69's experience text is contradictory ("2+ years , 3 to 5 years"); the parser takes the first value.
@@ -58,7 +58,7 @@ cd frontend && npm run dev                         # Next.js 16 (untouched until
 
 - Every request to a site goes through `PoliteFetcher.fetch()`; never use httpx/requests/Playwright directly in a scraper.
 - A scraper only parses (`first_listing_url`, `parse_listing`, `parse_detail` → `RawJob`). Fetching, cleaning, saving and health live in the pipeline.
-- Put `title`/`location` on `ListingItem` when the listing shows them, so tenders and on-site jobs outside Nepal are skipped without a request.
+- Put `title`/`location` on `ListingItem` when the listing shows them, so tenders and jobs limited to outside Nepal are skipped without a request.
 - Health: a run with a `problem` (zero jobs, listing failed, most job pages failed, 403/429) → `degraded`, then `failing` after 3 runs in a row. Hitting the request limit is not a problem.
 - Chromium for Playwright: `uv run playwright install chromium`.
 - Schedule: Beat calls `dispatch_scrapes` at 06:00 and 18:00 Asia/Kathmandu; it queues `scrape_source` for each enabled, approved source with a scraper. No automatic retries: the next scheduled run is the retry.

@@ -167,6 +167,16 @@ def test_tender_on_the_listing_is_skipped_without_opening_it(db_session, source)
     assert f"{BASE}/jobs/2" not in fetcher.fetched
 
 
+def test_remote_job_limited_to_another_country_is_skipped_without_opening_it(db_session, source):
+    pages = {FIRST_PAGE: listing({"id": "1", "title": "Engineer", "location": "Remote (USA)"})}
+    fetcher = FakeFetcher(pages)
+
+    result = scrape(db_session, source, FakeScraper(), fetcher)
+
+    assert (result.skipped, result.new) == (1, 0)
+    assert fetcher.fetched == [FIRST_PAGE]
+
+
 def test_onsite_job_outside_nepal_is_skipped_without_opening_it(db_session, source):
     pages = site_with_jobs("1")
     pages[FIRST_PAGE] = listing({"id": "1"}, {"id": "2", "location": "Pune, India"})

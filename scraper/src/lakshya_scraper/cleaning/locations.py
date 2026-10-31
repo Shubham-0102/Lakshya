@@ -45,7 +45,7 @@ _CITY_ALIASES = {
     "Dhulikhel": ["dhulikhel"],
 }  # fmt: skip
 
-# Places that are clearly outside Nepal (we keep Nepal and remote jobs only)
+# Places that are clearly outside Nepal (we keep jobs in Nepal, and remote jobs open to Nepal)
 _FOREIGN_PLACES = [
     "india", "pune", "bangalore", "bengaluru", "delhi", "new delhi", "mumbai", "noida",
     "gurgaon", "gurugram", "hyderabad", "chennai", "kolkata", "usa", "united states",
@@ -67,6 +67,8 @@ _CITY = _whole_words(list(_ALIAS_TO_CITY))
 _FOREIGN = _whole_words(_FOREIGN_PLACES)
 _NEPAL = re.compile(r"\bnepal\b")
 _REMOTE = re.compile(r"\b(remote|work from home|wfh|telecommut\w*|telework\w*|worldwide)\b")
+# Words next to "remote" that don't limit a job to one place
+_OPEN_TO_NEPAL = re.compile(r"\b(global(ly)?|anywhere|asia|apac|hybrid)\b")
 # Placeholders from sites' posting forms that name no place, e.g. "Other - Specify"
 _PLACEHOLDER = re.compile(r"^(other( ?- ?specify)?|n/?a|not specified|-+)$")
 _DISTRICT_WORDS = re.compile(
@@ -105,10 +107,12 @@ def clean_location(text: str) -> Location:
             return Location(", ".join(parts), is_remote, False, False)
         return Location("Nepal", is_remote, False, True)
 
-    outside_nepal = bool(_FOREIGN.search(lowered))
+    foreign = bool(_FOREIGN.search(lowered))
     # "Remote" on its own isn't a place to store
     rest = squash(_REMOTE.sub(" ", lowered).strip(" ,;/|-()"))
-    return Location(text if rest else None, is_remote, outside_nepal, outside_nepal or is_remote)
+    # "Remote - Boston" is limited to that place, even if we don't know the place
+    limited = is_remote and bool(rest) and not _OPEN_TO_NEPAL.search(rest)
+    return Location(text if rest else None, is_remote, foreign or limited, foreign or is_remote)
 
 
 def is_known_place(text: str) -> bool:

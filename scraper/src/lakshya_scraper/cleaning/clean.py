@@ -17,7 +17,7 @@ _NO_LOCATION = Location(None, is_remote=False, outside_nepal=False, recognized=T
 
 
 def clean(raw: RawJob) -> CleanJob | None:
-    """Returns None for tenders and notices, and for on-site jobs outside Nepal."""
+    """Returns None for tenders and notices, and for jobs people in Nepal can't take."""
     job = f"{raw.source_slug}/{raw.external_id}"
 
     if not is_job_posting(raw.title):
@@ -25,8 +25,8 @@ def clean(raw: RawJob) -> CleanJob | None:
         return None
 
     location = clean_location(raw.location) if raw.location else _NO_LOCATION
-    if location.outside_nepal and not location.is_remote:
-        logger.info("%s skipped: outside Nepal and not remote (%r)", job, raw.location)
+    if location.outside_nepal:
+        logger.info("%s skipped: limited to outside Nepal (%r)", job, raw.location)
         return None
     if not location.recognized:
         logger.info("%s: unrecognized location kept as text (%r)", job, raw.location)
