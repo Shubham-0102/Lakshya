@@ -4,6 +4,7 @@
     uv run python -m lakshya_scraper run jobsnepal                       # real run, saves jobs
     uv run python -m lakshya_scraper reclean --dry-run                   # show what would change
     uv run python -m lakshya_scraper reclean                             # re-clean stored jobs
+    uv run python -m lakshya_scraper learn icimod --dry-run              # AI writes a recipe
 
 Logs go to stderr and results to stdout, so the output can be piped (e.g. into jq).
 """
@@ -15,7 +16,15 @@ import sys
 from dataclasses import asdict
 
 from lakshya_backend.db.session import get_session
-from lakshya_scraper.pipeline import SourceBusy, preview_source, run_source
+from lakshya_scraper.llm import LlmError
+from lakshya_scraper.pipeline import (
+    SourceBusy,
+    SourceNotAllowed,
+    learn_source,
+    preview_source,
+    run_source,
+)
+from lakshya_scraper.recipes.learn import LearnFailed
 from lakshya_scraper.reclean import reclean
 from lakshya_scraper.scrapers import SCRAPERS
 
@@ -35,11 +44,23 @@ def main(argv: list[str] | None = None) -> int:
     recleaning.add_argument(
         "--dry-run", action="store_true", help="show what would change; save nothing"
     )
+    learning = commands.add_parser("learn", help="have the AI write a recipe for a source")
+    learning.add_argument("slug", help="source to learn")
+    learning.add_argument("--dry-run", action="store_true", help="show the recipe; save nothing")
     args = parser.parse_args(argv)
 
     logging.basicConfig(
         level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s"
     )
+
+    if args.command == "learn":
+        try:
+            recipe = learn_source(args.slug, dry_run=args.dry_run)
+        except (LearnFailed, LlmError, SourceBusy, SourceNotAllowed) as error:
+            print(error, file=sys.stderr)
+            return 1
+        print(recipe.model_dump_json(indent=2, exclude_none=True))
+        return 0
 
     if args.command == "reclean":
         with get_session() as session:

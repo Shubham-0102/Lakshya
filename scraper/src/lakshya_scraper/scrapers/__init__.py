@@ -21,10 +21,4 @@ SCRAPERS: dict[str, type[Scraper]] = {
 }
 
 
-def get_scraper(slug: str) -> Scraper:
-    if slug not in SCRAPERS:
-        raise KeyError(f"no scraper for source {slug!r} (known: {sorted(SCRAPERS)})")
-    return SCRAPERS[slug]()
-
-
-__all__ = ["SCRAPERS", "FeedScraper", "ListingItem", "ListingPage", "Scraper", "get_scraper"]
+__all__ = ["SCRAPERS", "FeedScraper", "ListingItem", "ListingPage", "Scraper"]

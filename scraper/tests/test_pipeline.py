@@ -70,7 +70,13 @@ def listing(*jobs: dict, next_url: str | None = None) -> str:
 
 
 def job_page(title="Backend Engineer", company="Acme Pvt. Ltd.", **fields) -> str:
-    return json.dumps({"title": title, "company": company, "location": "Kathmandu"} | fields)
+    job = {
+        "title": title,
+        "company": company,
+        "location": "Kathmandu",
+        "description": "Build APIs.",
+    }
+    return json.dumps(job | fields)
 
 
 def site_with_jobs(*ids: str) -> dict[str, str | Exception]:
@@ -324,6 +330,7 @@ class FakeFeed(FeedScraper):
             title=entry["title"],
             company="Acme",
             location="Remote",
+            description="Build APIs.",
         )
 
 
@@ -415,3 +422,25 @@ def test_a_feed_page_with_no_jobs_does_not_end_the_feed(db_session, source):
     result = scrape(db_session, source, TwoSearches(), fetcher)
 
     assert (result.listing_pages, result.new) == (2, 1)
+
+
+def test_jobs_saved_without_a_description_are_a_problem(db_session, source):
+    """Nothing crashes when an optional selector stops matching, so this needs its own check."""
+    pages = site_with_jobs("1", "2", "3")
+    for job_id in ("1", "2"):
+        pages[f"{BASE}/jobs/{job_id}"] = job_page(title=f"Engineer {job_id}", description=None)
+
+    result = scrape(db_session, source, FakeScraper(), FakeFetcher(pages))
+
+    assert (result.new, result.incomplete) == (3, 2)
+    assert result.problem == "2 of 3 new jobs have no description"
+    assert source.health_status == HealthStatus.DEGRADED
+
+
+def test_a_few_jobs_without_a_description_are_fine(db_session, source):
+    pages = site_with_jobs("1", "2", "3")
+    pages[f"{BASE}/jobs/1"] = job_page(title="Engineer 1", description=None)
+
+    result = scrape(db_session, source, FakeScraper(), FakeFetcher(pages))
+
+    assert (result.incomplete, result.problem) == (1, None)

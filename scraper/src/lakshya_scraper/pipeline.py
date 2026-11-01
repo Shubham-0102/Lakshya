@@ -3,6 +3,11 @@
 run_source(slug) is the entry point (used by the CLI and by Celery). scrape() is the
 pipeline itself, with the scraper, fetcher and session passed in so tests can use fakes.
 preview_source(slug) is the dry run: the same fetching and cleaning, nothing saved.
+learn_source(slug) has the AI write a recipe for a source.
+
+Self-healing: when a run of a recipe source has a problem, run_with_healing re-learns what
+broke, runs again, and keeps the new recipe only if that run works. A source that has failed
+FAILING_AFTER times in a row stops spending AI calls until a person looks at it.
 """
 
 import logging
@@ -33,8 +38,11 @@ from lakshya_scraper.fetching import (
     StopRun,
 )
 from lakshya_scraper.job_format import CleanJob, RawJob
-from lakshya_scraper.scrapers import ListingItem, Scraper, get_scraper
-from lakshya_scraper.storage import known_external_ids, mark_seen, save_job
+from lakshya_scraper.llm import LlmError, get_llm
+from lakshya_scraper.recipes import Recipe, RecipeScraper
+from lakshya_scraper.recipes.learn import LearnFailed, learn_site, relearn
+from lakshya_scraper.scrapers import SCRAPERS, ListingItem, Scraper
+from lakshya_scraper.storage import known_external_ids, mark_seen, save_job, save_recipe
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +51,7 @@ FAILING_AFTER = 3  # runs in a row with a problem before a source counts as fail
 # so a run that is still going can't lose its lock.
 LOCK_TIMEOUT_SECONDS = 60 * 60
 
-Outcome = Literal["new", "skipped", "failed"]
+Outcome = Literal["new", "incomplete", "skipped", "failed"]
 
 
 class SourceNotAllowed(Exception):
@@ -63,8 +71,10 @@ class RunResult:
     new: int = 0  # saved as new jobs
     skipped: int = 0  # tenders, jobs limited to outside Nepal, pages robots.txt disallows
     failed: int = 0  # job pages that couldn't be fetched, read or saved
+    incomplete: int = 0  # of the new jobs, those saved with no description
     stopped_early: str | None = None  # request limit reached, or the site asked us to stop
     problem: str | None = None  # why the source is degraded; None means healthy
+    healing: str | None = None  # what self-healing did, if it ran
 
 
 @dataclass
@@ -82,14 +92,58 @@ def run_source(slug: str, limit: int | None = None) -> RunResult:
 
     Raises SourceBusy if the source is already being scraped.
     """
-    scraper = get_scraper(slug)
     with Redis.from_url(get_settings().redis_url) as redis, source_lock(redis, slug):
         with get_session() as session:
             source = _load_allowed_source(session, slug)
+            scraper = scraper_for(source)
             with open_fetcher(slug, source.crawl_delay_seconds) as fetcher:
-                result = scrape(session, source, scraper, fetcher, limit=limit)
+                result = run_with_healing(session, source, scraper, fetcher, limit)
     logger.info("run finished: %s", result)
     return result
+
+
+def run_with_healing(
+    session: Session,
+    source: Source,
+    scraper: Scraper,
+    fetcher: PoliteFetcher,
+    limit: int | None = None,
+) -> RunResult:
+    """One scrape, and for a recipe that has stopped working, one attempt to repair it."""
+    result = scrape(session, source, scraper, fetcher, limit=limit)
+    if not _worth_healing(source, scraper, result):
+        return result
+
+    previous_recipe = source.recipe
+    try:
+        recipe = relearn(fetcher, get_llm(), source.name, scraper, worth_opening)
+    except (FetchError, StopRun, LearnFailed, LlmError) as error:
+        logger.warning("%s: self-healing failed: %s", source.slug, error)
+        result.healing = f"failed: {error}"
+        return result
+
+    save_recipe(source, recipe)
+    source.failure_count -= 1  # the run below is a second try, not a second failure
+    healed_scraper = RecipeScraper(source.slug, scraper.listing_url, recipe)
+    retry = scrape(session, source, healed_scraper, fetcher, limit=limit)
+    if retry.problem:
+        source.recipe = previous_recipe  # it passed on one page but not in a real run
+        session.commit()
+        retry.healing = f"failed: the new recipe didn't work: {retry.problem}"
+        logger.warning("%s: self-healing failed: %s", source.slug, retry.healing)
+    else:
+        retry.healing = "healed"
+        logger.info("%s: self-healing repaired the recipe", source.slug)
+    return retry
+
+
+def _worth_healing(source: Source, scraper: Scraper, result: RunResult) -> bool:
+    return (
+        isinstance(scraper, RecipeScraper)  # hand-written scrapers are fixed by a person
+        and bool(result.problem)
+        and not result.stopped_early  # a site that says stop hasn't changed its layout
+        and source.health_status != HealthStatus.FAILING
+    )
 
 
 @contextmanager
@@ -109,11 +163,38 @@ def source_lock(redis: Redis, slug: str) -> Iterator[None]:
         lock.release()
 
 
+def scraper_for(source: Source) -> Scraper:
+    """A hand-written scraper if the source has one, otherwise its saved recipe."""
+    if source.slug in SCRAPERS:
+        return SCRAPERS[source.slug]()
+    if source.recipe:
+        recipe = Recipe.model_validate(source.recipe)
+        return RecipeScraper(source.slug, source.base_url, recipe)
+    raise KeyError(f"{source.slug} has no scraper and no recipe yet (see `learn`)")
+
+
+def learn_source(slug: str, dry_run: bool = False) -> Recipe:
+    """Have the AI write a recipe for an approved source, which needn't be enabled yet."""
+    llm = get_llm()
+    with Redis.from_url(get_settings().redis_url) as redis, source_lock(redis, slug):
+        with get_session() as session:
+            source = session.scalars(select(Source).where(Source.slug == slug)).one()
+            if source.compliance_status != ComplianceStatus.APPROVED:
+                raise SourceNotAllowed(f"{slug} is not approved (see sources.yaml)")
+            url = SCRAPERS[slug]().first_listing_url() if slug in SCRAPERS else source.base_url
+            with open_fetcher(slug, source.crawl_delay_seconds) as fetcher:
+                recipe = learn_site(fetcher, llm, source.name, url, worth_opening)
+            if not dry_run:
+                save_recipe(source, recipe)
+                session.commit()
+    return recipe
+
+
 def preview_source(slug: str, limit: int = 3) -> Iterator[Preview]:
     """Dry run: fetch, parse and clean up to `limit` job pages, without saving anything."""
-    scraper = get_scraper(slug)
     with get_session() as session:
-        crawl_delay = _load_allowed_source(session, slug).crawl_delay_seconds
+        source = _load_allowed_source(session, slug)
+        scraper, crawl_delay = scraper_for(source), source.crawl_delay_seconds
 
     with open_fetcher(slug, crawl_delay) as fetcher:
         items = collect_listing(scraper, fetcher, RunResult(slug), max_pages=1)
@@ -199,8 +280,9 @@ def scrape(
         except SiteAskedToStop as stop:
             result.stopped_early = result.problem = str(stop)
         else:
-            if outcome == "new":
+            if outcome in ("new", "incomplete"):
                 result.new += 1
+                result.incomplete += outcome == "incomplete"
             elif outcome == "skipped":
                 result.skipped += 1
             else:
@@ -209,6 +291,8 @@ def scrape(
     attempted = result.new + result.failed
     if not result.problem and result.failed > attempted / 2:
         result.problem = f"{result.failed} of {attempted} job pages failed"
+    if not result.problem and result.incomplete > result.new / 2:
+        result.problem = f"{result.incomplete} of {result.new} new jobs have no description"
 
     _update_health(source, result, started)
     session.commit()
@@ -295,7 +379,7 @@ def _process(
         session.rollback()
         logger.exception("%s: could not save %s", source.slug, item.url)
         return "failed"
-    return "new"
+    return "new" if raw.description else "incomplete"
 
 
 def _update_health(source: Source, result: RunResult, started: datetime) -> None:

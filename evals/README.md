@@ -13,3 +13,12 @@ Planned contents, each added in the phase that needs it:
 | Scam detection | Precision and recall on labelled real and fake postings | 5 |
 
 Empty in Phase 1: this folder becomes a Python package when the first eval script is written.
+
+## Scripts
+
+Both use saved pages only, so no job site is contacted. They spend free-tier quota: 20 requests a day per model, and a full run uses up to 12.
+
+| Script | Answers |
+| --- | --- |
+| `recipe_accuracy.py <model>` | How well does a model learn recipes? Scored field by field against the hand-written scrapers. |
+| `self_healing.py <model>` | Can a model repair a recipe after a redesign? Renames classes in the saved pages, then scores what comes back. |

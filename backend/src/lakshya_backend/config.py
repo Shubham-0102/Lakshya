@@ -21,7 +21,7 @@ class Settings(BaseSettings):
 
     # AI: tried in this order when a model is busy. Free-tier models, so public job text only.
     gemini_api_key: str | None = None
-    gemini_models: str = "gemini-3.8-flash,gemini-3.6-flash,gemini-3.5-flash-lite"
+    gemini_models: str = "gemini-3.6-flash,gemini-3.8-flash"
 
 
 @lru_cache

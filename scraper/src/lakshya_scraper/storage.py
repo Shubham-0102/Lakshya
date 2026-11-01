@@ -1,6 +1,6 @@
 """Database reads and writes for the pipeline."""
 
-from datetime import datetime
+from datetime import UTC, datetime
 
 from sqlalchemy import select, update
 from sqlalchemy.dialects.postgresql import insert
@@ -8,9 +8,15 @@ from sqlalchemy.orm import Session
 
 from lakshya_backend.db.models import Company, Job, JobSource, Source
 from lakshya_scraper.job_format import CleanJob, RawJob
+from lakshya_scraper.recipes import Recipe
 
 # CleanJob fields that are not columns of the jobs table
 _NOT_JOB_COLUMNS = {"source_slug", "external_id", "url", "company_name", "company_normalized_name"}
+
+
+def save_recipe(source: Source, recipe: Recipe) -> None:
+    source.recipe = recipe.model_dump(mode="json", exclude_none=True)
+    source.recipe_learned_at = datetime.now(UTC)
 
 
 def known_external_ids(session: Session, source_id: int) -> set[str]:

@@ -9,6 +9,7 @@ content to improve its products, and people may read it. CVs never go through a 
 """
 
 import logging
+import threading
 import time
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -16,6 +17,7 @@ from functools import lru_cache
 from typing import TypeVar
 
 from google import genai
+from google.genai import types
 
 # The SDK has no public name for the errors its interactions API raises. uv.lock pins the
 # version, and if an upgrade moves them this import fails loudly at startup.
@@ -30,6 +32,7 @@ Output = TypeVar("Output", bound=BaseModel)
 _NOT_FOUND = 404
 _TOO_MANY_REQUESTS = 429
 _SERVER_ERRORS = 500
+_NEVER_SENT = 599
 
 
 @dataclass(frozen=True)
@@ -109,20 +112,54 @@ class Llm:
         return None
 
 
-def gemini_sender(client: genai.Client, timeout_seconds: float = 90.0) -> Send:
+def _within[Result](seconds: float, call: Callable[[], Result]) -> Result:
+    """Give up on `call` after `seconds`, however it's getting on. The SDK's own timeout isn't
+    a deadline: it restarts when any bytes arrive, and a real call ran for over 5 minutes on a
+    90 second timeout. The thread is a daemon, so one that never returns can't stop us exiting."""
+    outcome: dict = {}
+
+    def run() -> None:
+        try:
+            outcome["value"] = call()
+        except Exception as error:
+            outcome["error"] = error
+
+    thread = threading.Thread(target=run, daemon=True)
+    thread.start()
+    thread.join(seconds)
+    if thread.is_alive():
+        raise ModelBusy(f"no answer within {seconds:.0f} s")
+    if "error" in outcome:
+        raise outcome["error"]
+    return outcome["value"]
+
+
+def gemini_client(api_key: str | None) -> genai.Client:
+    """No retries in the SDK. It obeys the server's Retry-After, so a used-up daily quota (20
+    requests per model on the free tier) could hold a call for hours instead of telling us to
+    try the next model. `attempts` can't turn this off: it means retries, and 0 becomes 1. So
+    retries are limited to a status code no server sends."""
+    retries = types.HttpRetryOptions(http_status_codes=[_NEVER_SENT])
+    return genai.Client(api_key=api_key, http_options=types.HttpOptions(retry_options=retries))
+
+
+def gemini_sender(client: genai.Client, timeout_seconds: float = 120.0) -> Send:
+    def ask(model: str, prompt: str, schema: dict):
+        return client.interactions.create(
+            model=model,
+            input=prompt,
+            store=False,  # no copy of the conversation is kept on Google's side
+            response_format={
+                "type": "text",
+                "mime_type": "application/json",
+                "schema": schema,
+            },
+            timeout=timeout_seconds,
+        )
+
     def send(model: str, prompt: str, schema: dict) -> Reply:
         try:
-            response = client.interactions.create(
-                model=model,
-                input=prompt,
-                store=False,  # no copy of the conversation is kept on Google's side
-                response_format={
-                    "type": "text",
-                    "mime_type": "application/json",
-                    "schema": schema,
-                },
-                timeout=timeout_seconds,
-            )
+            response = _within(timeout_seconds, lambda: ask(model, prompt, schema))
         except APIConnectionError as error:  # includes timeouts
             raise ModelBusy(type(error).__name__) from error
         except APIStatusError as error:
@@ -153,5 +190,5 @@ def get_llm() -> Llm:
     settings = get_settings()
     if not settings.gemini_api_key:
         raise LlmError("GEMINI_API_KEY is not set. Add it to .env (see .env.example).")
-    client = genai.Client(api_key=settings.gemini_api_key)
+    client = gemini_client(settings.gemini_api_key)
     return Llm(gemini_sender(client), settings.gemini_models.split(","))

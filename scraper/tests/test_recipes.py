@@ -115,7 +115,11 @@ def test_recipe_waits_for_pages_built_with_javascript():
 
 
 def minimal(**job_fields) -> Recipe:
-    rules = {"title": [Pick(css="h1")], "company": [Pick(fixed="Acme")]} | job_fields
+    rules = {
+        "title": [Pick(css="h1")],
+        "company": [Pick(fixed="Acme")],
+        "description": [Pick(css="body")],
+    } | job_fields
     return Recipe(listing=ListingRules(item="li", link="a"), job=JobRules(**rules))
 
 
@@ -130,6 +134,20 @@ ITEM = ListingItem("1", "https://jobs.example.com/jobs/1", title="From the listi
 def test_a_pick_sets_exactly_one_way_of_reading(fields):
     with pytest.raises(ValidationError):
         Pick(**fields)
+
+
+@pytest.mark.parametrize("field", ["title", "company", "description"])
+def test_a_recipe_must_say_how_to_read_the_fields_a_job_needs(field):
+    rules = {"title": [Pick(css="h1")], "company": [Pick(css="h2")], "description": [Pick(css="p")]}
+
+    with pytest.raises(ValidationError):  # left out, as a real model did with description
+        JobRules(**{name: picks for name, picks in rules.items() if name != field})
+    with pytest.raises(ValidationError):  # or given with no way of reading it
+        JobRules(**(rules | {field: []}))
+
+
+def test_the_ai_is_told_these_fields_are_required():
+    assert {"title", "company", "description"} <= set(JobRules.model_json_schema()["required"])
 
 
 def test_a_bad_selector_is_rejected_when_the_recipe_loads():

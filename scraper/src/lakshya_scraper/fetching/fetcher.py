@@ -79,15 +79,18 @@ class PoliteFetcher:
     def __exit__(self, *exc_info) -> None:
         self._context.close()
 
-    def fetch(self, url: str, wait_for: str | None = None) -> str:
+    def fetch(self, url: str, wait_for: str | None = None, settle_ms: int = 0) -> str:
         """Return the page's HTML after JavaScript ran. `wait_for`: a CSS selector that must
-        appear first (for pages that build their content with JavaScript)."""
+        appear first (for pages that build their content with JavaScript). `settle_ms`: time
+        to let scripts run when we don't know yet what to wait for (a page being learned)."""
 
         def open_page() -> int | None:
             response = self._page.goto(url, wait_until="domcontentloaded", timeout=self._timeout_ms)
             return response.status if response else None
 
         self._request(url, open_page)
+        if settle_ms:
+            self._page.wait_for_timeout(settle_ms)
         return self._content(url, wait_for)
 
     def fetch_text(self, url: str) -> str:

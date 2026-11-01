@@ -9,7 +9,7 @@ sources table, so a recipe can't send the scraper somewhere else.
 from typing import Annotated, Literal, Self
 
 import soupsieve
-from pydantic import AfterValidator, BaseModel, ConfigDict, model_validator
+from pydantic import AfterValidator, BaseModel, ConfigDict, Field, model_validator
 
 
 def _valid_selector(selector: str) -> str:
@@ -41,6 +41,9 @@ class Pick(BaseModel):
 
 
 Picks = list[Pick]  # tried in order: the first one that finds a value wins
+# A job is no use without these, so a recipe must say how to read them. Without this the AI
+# can leave one out, and telling it the rules failed doesn't help: leaving it out stays valid.
+Required = Annotated[Picks, Field(min_length=1)]
 
 
 class ListingRules(BaseModel):
@@ -62,15 +65,15 @@ class JobRules(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    title: Picks
-    company: Picks
+    title: Required
+    company: Required
+    description: Required
     location: Picks = []
     country: Picks = []  # added after the location: "Kathmandu" + "NP" -> "Kathmandu, Nepal"
     salary: Picks = []
     experience: Picks = []
     deadline: Picks = []
     posted: Picks = []
-    description: Picks = []
     wait_for: Selector | None = None
 
 

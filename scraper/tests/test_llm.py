@@ -1,6 +1,8 @@
 """The LLM wrapper with a fake model: no network and no API key needed."""
 
 import logging
+import threading
+import time
 
 import httpx
 import pytest
@@ -15,7 +17,16 @@ from google.genai._gaos.lib.compat_errors import (
 from pydantic import BaseModel
 
 from lakshya_scraper import llm as llm_module
-from lakshya_scraper.llm import Llm, LlmError, ModelBusy, Reply, SkipModel, gemini_sender, get_llm
+from lakshya_scraper.llm import (
+    Llm,
+    LlmError,
+    ModelBusy,
+    Reply,
+    SkipModel,
+    gemini_client,
+    gemini_sender,
+    get_llm,
+)
 from lakshya_scraper.recipes import Recipe
 
 REQUEST = httpx.Request("POST", "https://generativelanguage.example.com")
@@ -210,6 +221,34 @@ def test_sender_asks_for_json_and_counts_thinking_as_output():
 def test_sender_turns_each_failure_into_what_it_means(outcome, meaning):
     with pytest.raises(meaning):
         gemini_sender(FakeClient(outcome))("model-a", "prompt", {})
+
+
+def test_a_call_that_never_finishes_is_given_up_on_at_the_deadline():
+    """A real call ran past 5 minutes on a 90 second timeout: bytes kept resetting the SDK's."""
+    release = threading.Event()
+
+    class StuckClient:
+        interactions = None
+
+        def create(self, **request):
+            release.wait(30)
+            return Response()
+
+    client = StuckClient()
+    client.interactions = client
+    started = time.monotonic()
+
+    with pytest.raises(ModelBusy, match="no answer within"):
+        gemini_sender(client, timeout_seconds=0.1)("model-a", "prompt", {})
+
+    assert time.monotonic() - started < 5
+    release.set()
+
+
+def test_the_sdk_is_told_never_to_retry_by_itself():
+    client = gemini_client("not-a-real-key")
+
+    assert client._api_client._http_options.retry_options.http_status_codes == [599]
 
 
 def test_missing_api_key_says_what_to_do(monkeypatch):
